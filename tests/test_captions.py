@@ -75,6 +75,28 @@ class EmphasisTest(unittest.TestCase):
         idx = cap.pick_emphasis(self._phrase("ini cuma contoh biasa"))
         self.assertIsInstance(idx, int)
 
+    def test_weak_phrase_returns_none(self) -> None:
+        """Frasa tanpa sinyal kuat tidak boleh dipaksa punya kata kuning."""
+        self.assertIsNone(cap.pick_emphasis(self._phrase("proyek ini berjalanan baik")))
+
+    def test_neutral_phrases_get_no_emphasis(self) -> None:
+        """Frasa tanpa sinyal kuat tidak boleh dipaksa punya kata kuning."""
+        neutral = [
+            "sini untuk anda",
+            "berkontribusi dan membuat",
+            "proyek ini berjalanan baik",
+            "dan semua orang lain",
+            "membuat proyek ini",
+        ]
+        hits = [p for p in neutral if cap.pick_emphasis(self._phrase(p)) is not None]
+        self.assertEqual(hits, [], msg=f"frasa netral dapat emphasis: {hits}")
+
+    def test_emphatic_signals_do_get_emphasis(self) -> None:
+        for text in ("jangan lakukan itu", "apakah anda setuju", "harga dua ratus ribu"):
+            self.assertIsNotNone(
+                cap.pick_emphasis(self._phrase(text)), msg=f"{text!r} seharusnya dapat emphasis"
+            )
+
 
 class AssTest(unittest.TestCase):
     def _caps(self) -> list[dict]:

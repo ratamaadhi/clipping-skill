@@ -145,17 +145,16 @@ def _dedupe(words: list[dict], window: float = 0.30) -> list[dict]:
 
 
 def _normalize_times(words: list[dict], min_dur: float = 0.02) -> None:
-    """Paksa monoton dan berdurasi wajar. Timestamp ASR kadang menumpuk di jeda."""
-    for w in words:
+    """Paksa monoton dan berdurasi wajar. Timestamp ASR kadang menumpuk di jeda.
+
+    Satu pass ke depan: setiap kata didorong mulai setelah kata sebelumnya
+    berakhir. Ini lebih aman daripada memotong `end` kata sebelumnya, karena
+    `end` yang dipotong bisa tetap lebih besar dari `start` kata berikutnya.
+    """
+    for i, w in enumerate(words):
         start = max(0.0, float(w["start"]))
-        end = float(w["end"])
-        if end - start < min_dur:
-            end = start + min_dur
+        if i > 0 and start < words[i - 1]["end"]:
+            start = words[i - 1]["end"]
+        end = max(float(w["end"]), start + min_dur)
         w["start"] = round(start, 3)
         w["end"] = round(end, 3)
-
-    for i in range(len(words) - 1):
-        if words[i]["end"] > words[i + 1]["start"]:
-            words[i]["end"] = round(
-                max(words[i]["start"] + min_dur, words[i + 1]["start"]), 3
-            )

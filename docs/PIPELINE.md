@@ -189,6 +189,15 @@ durasi yang sudah dibulatkan. Konversi ke frame **sekali** di akhir:
 - gap ≤0.55s diisi sampai `next.start − 0.04` — mencegah caption berkedip
 - gap >0.55s dibiarkan — itu jeda bicara nyata, bukan flicker
 
+**Emphasis (kata kuning):**
+- maksimum **satu** kata per frasa
+- hanya untuk sinyal kuat: angka, negasi, superlatif, kata tanya (`EMPHATIC_WORDS`)
+- ambang skor `MIN_EMPHASIS_SCORE = 2.0`; di bawah itu frasa tidak diberi emphasis
+
+Tanpa ambang, setiap frasa dapat kata kuning — dan begitu semua ditekankan,
+tidak ada yang menonjol. Target sehat: **15–30% caption** punya emphasis,
+bukan 100%.
+
 ---
 
 ## 8. Render

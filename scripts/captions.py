@@ -23,6 +23,19 @@ MARGIN_V = 520
 PRIMARY = "&H00FFFFFF"  # putih
 ACCENT = "&H0000E5FF"   # kuning (BGR)
 
+# Kata yang layak diangkat. Sengaja sempit: kalau semua kata ditekankan,
+# tidak ada yang menonjol. Sisa kata hanya diberi bobot panjang sebagai tie-break.
+EMPHATIC_WORDS = frozenset(
+    {
+        "paling", "harus", "jangan", "gak", "nggak", "tidak", "bukan", "belum",
+        "salah", "benar", "cuma", "tapi", "tetapi", "justru", "bahkan", "selalu",
+        "apakah", "kenapa", "bagaimana", "gimana", "berapa", "siapa",
+    }
+)
+
+# Ambang skor minimum supaya emphasis benar-benar selektif.
+MIN_EMPHASIS_SCORE = 2.0
+
 
 def group_words(
     words: list[dict[str, Any]],
@@ -65,7 +78,12 @@ def group_words(
 
 
 def pick_emphasis(phrase: dict[str, Any]) -> int | None:
-    """Pilih SATU kata untuk ditekankan. Lebih dari satu = tidak ada yang menonjol."""
+    """Pilih SATU kata untuk ditekankan, atau None.
+
+    Kembalian None itu normal dan disengaja — kalau setiap frasa punya kata
+    kuning, tidak ada lagi yang menonjol. Emphasis hanya untuk sinyal kuat:
+    angka, negasi, superlatif, kata tanya.
+    """
     words = phrase["words"]
     if not words:
         return None
@@ -78,7 +96,7 @@ def pick_emphasis(phrase: dict[str, Any]) -> int | None:
         # angka (digit maupun kata bilangan) paling layak diangkat
         if T.count_numbers(raw) > 0:
             score += 3.0
-        if clean in {"paling", "harus", "jangan", "gak", "tidak", "nggak", "salah", "benar", "cuma", "tapi"}:
+        if clean in EMPHATIC_WORDS:
             score += 2.0
         if clean and clean.isupper():
             score += 1.5
@@ -88,6 +106,8 @@ def pick_emphasis(phrase: dict[str, Any]) -> int | None:
         if score > best_score:
             best_idx, best_score = idx, score
 
+    if best_score < MIN_EMPHASIS_SCORE:
+        return None
     return best_idx
 
 

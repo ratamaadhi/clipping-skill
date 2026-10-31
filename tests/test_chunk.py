@@ -150,6 +150,20 @@ class MergeTest(unittest.TestCase):
         merged = C.merge([[_w("x", 5.0, 5.0)], []], self.chunks)
         self.assertGreater(merged[0]["end"], merged[0]["start"])
 
+    def test_stacked_words_made_monotonic(self) -> None:
+        """Kasus nyata dari Groq: beberapa kata berbagi start yang sama di jeda."""
+        words = [
+            {"w": "Anda", "start": 261.366, "end": 261.386},
+            {"w": "Untuk", "start": 261.366, "end": 261.386},
+            {"w": "yang", "start": 261.386, "end": 261.406},
+            {"w": "mengembukakan", "start": 261.386, "end": 261.900},
+        ]
+        C._normalize_times(words)
+        for a, b in zip(words, words[1:]):
+            self.assertLessEqual(a["end"], b["start"] + 1e-6, msg=f"{a['w']} vs {b['w']}")
+        for w in words:
+            self.assertGreater(w["end"], w["start"])
+
 
 @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg tidak tersedia")
 class SilenceDetectTest(unittest.TestCase):
