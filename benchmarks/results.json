@@ -1,0 +1,51 @@
+{
+  "version": "0.1.0",
+  "host": {
+    "cpu": "Intel(R) Core(TM) i5-7300U CPU @ 2.60GHz",
+    "cpu_threads": 4,
+    "ram_total_gib": 7.13,
+    "ram_available_gib": 1.76,
+    "swap_total_gib": 4.0,
+    "swap_used_pct": 100.0,
+    "os": "Linux-7.0.0-14-generic-x86_64-with-glibc2.43",
+    "gpu": null
+  },
+  "runs": [
+    {
+      "model": "ggml-small-q5_1.bin",
+      "model_size_mb": 181.3,
+      "audio": "a130.wav",
+      "audio_seconds": 130.03,
+      "threads": 4,
+      "language": "id",
+      "wall_seconds": 89.84,
+      "peak_rss_mb": 487,
+      "cpu_percent": 322,
+      "rtf": 1.447,
+      "load_ms": 140.5,
+      "total_ms": 89784.9,
+      "encode_ms_per_run": 10440.8,
+      "encode_runs": 5,
+      "measured_at": "2026-10-31T18:55:29+00:00",
+      "note": "pembanding; batas bawah akurasi ID"
+    },
+    {
+      "model": "ggml-large-v3-turbo-q5_0.bin",
+      "model_size_mb": 547.4,
+      "audio": "a130.wav",
+      "audio_seconds": 130.03,
+      "threads": 4,
+      "language": "id",
+      "wall_seconds": 315.71,
+      "peak_rss_mb": 816,
+      "cpu_percent": 331,
+      "rtf": 0.412,
+      "load_ms": 498.5,
+      "total_ms": 315628.7,
+      "encode_ms_per_run": 61987.3,
+      "encode_runs": 5,
+      "measured_at": "2026-10-31T19:01:12+00:00",
+      "note": "kandidat utama offline; encoder seukuran large-v3"
+    }
+  ]
+}

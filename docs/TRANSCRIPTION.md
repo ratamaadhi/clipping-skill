@@ -78,12 +78,16 @@ Tapi lihat bagian pengukuran di bawah — di CPU 2-core, `large-v3-turbo` sangat
 Server: **Intel i5-7300U** (2 core / 4 thread, 2,6 GHz, 2017), **7,1 GB RAM**
 (1,6–1,9 GB tersedia), swap 4 GB **sudah 97% terpakai**, tanpa GPU.
 
-Diukur dengan `whisper.cpp 1.9.5`, `-t 4`, audio 16 kHz mono, `-l id`:
+Diukur dengan `whisper.cpp 1.9.5`, `-t 4`, audio 130 detik 16 kHz mono, `-l id`.
+Data mentah + runner: [`../benchmarks/`](../benchmarks/README.md).
 
-| Model | Peak RSS | Waktu untuk audio 130 s | Real-time factor |
-|---|---|---|---|
-| **large-v3-turbo q5_0** | **816 MB** | **4 menit 40 detik** | **0,46×** (2,15× lebih lambat dari realtime) |
-| small q5_1 | 488 MB | 1 menit 15 detik | 1,74× |
+| Model | Disk | **Peak RSS** | **Waktu** | Real-time factor |
+|---|---|---|---|---|
+| **large-v3-turbo q5_0** | 547 MB | **816 MB** | **4:40 – 5:16** | **0,41 – 0,46×** |
+| small q5_1 | 181 MB | 487 MB | 1:15 – 1:30 | 1,45 – 1,74× |
+
+Rentang waktu karena thermal throttling di CPU laptop (~13–20% antar run).
+**Peak RSS stabil di kedua run**, jadi angka memori yang bisa dipegang.
 
 Pada audio 650 detik, `large-v3-turbo` naik ke **863 MB** (masih tumbuh saat dihentikan).
 Kenaikan berasal dari PCM float32 + mel spectrogram yang di-load utuh.
@@ -92,14 +96,14 @@ Kenaikan berasal dari PCM float32 + mel spectrogram yang di-load utuh.
 
 | Durasi video | Perkiraan waktu proses | Perkiraan RAM |
 |---|---|---|
-| 10 menit | ~21 menit | ~850 MB |
-| 30 menit | ~64 menit | ~950 MB |
-| 1 jam | ~2,2 jam | ~1,1 GB |
-| 2 jam | ~4,4 jam | **~1,5 GB → tidak muat** |
+| 10 menit | ~24 menit | ~850 MB |
+| 30 menit | ~73 menit | ~950 MB |
+| 1 jam | ~2,4 jam | ~1,1 GB |
+| 2 jam | ~4,9 jam | **~1,5 GB → tidak muat** |
 
-Encode menyumbang **97% waktu** (54,6 detik per jendela 30 detik). Decoder turbo
-memang sudah dipangkas, tapi encoder-nya tetap seukuran `large-v3` — jadi `turbo`
-tidak banyak menolong di CPU.
+Encode menyumbang **97% waktu** — 62 detik per jendela 30 detik (vs 10,4 detik
+untuk `small`). Decoder turbo memang sudah dipangkas jadi 4 layer, tapi
+**encoder-nya tetap seukuran `large-v3`** — jadi `turbo` tidak banyak menolong di CPU.
 
 **Kesimpulan: secara RAM bisa, secara praktis tidak.** Untuk video >10 menit,
 mesin ini butuh waktu lebih lama daripada durasi videonya sendiri. Pakai Groq.
