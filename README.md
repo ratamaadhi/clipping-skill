@@ -66,16 +66,21 @@ Transkripsi butuh salah satu API key (isi di `.env`):
 
 ```bash
 cp .env.example .env
-# GROQ_API_KEY=...        # termurah, whisper-large-v3-turbo
+# GROQ_API_KEY=...        # ← rekomendasi: gratis ~8 jam audio/hari
+# DEEPGRAM_API_KEY=...    # $200 kredit, diarization
 # OPENAI_API_KEY=...
-# DEEPGRAM_API_KEY=...
 ```
+
+**Rekomendasi gratis: Groq.** `whisper-large-v3-turbo`, kuota 28.800 audio-detik/hari
+(8 jam), WER Bahasa Indonesia ~7%, tanpa RAM lokal. Biaya $0.
+Perbandingan lengkap + alasan opsi lain didiskualifikasi: [`docs/TRANSCRIPTION.md`](docs/TRANSCRIPTION.md).
 
 Atau jalur lokal (butuh venv Python 3.11–3.12 karena `ctranslate2` belum ada wheel untuk 3.14):
 
 ```bash
 pip install faster-whisper
 export CLIP_ENGINE=local
+export CLIP_WHISPER_MODEL=large-v3-turbo   # jangan di bawah "small" untuk Bahasa Indonesia
 ```
 
 ---

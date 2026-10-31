@@ -67,7 +67,13 @@ def step_ingest(args: argparse.Namespace) -> int:
 def step_transcribe(args: argparse.Namespace) -> int:
     wd = _wd(args.work)
     _need(wd, "meta.json", "ingest")
-    tr = transcribe.run(wd, engine=args.engine, language=args.language, force=args.force)
+    tr = transcribe.run(
+        wd,
+        engine=args.engine,
+        language=args.language,
+        force=args.force,
+        chunk_seconds=args.chunk_seconds,
+    )
     print(f"✓ transkrip  {len(tr['words'])} kata  bahasa={tr['language']}  engine={tr['engine']}")
     return 0
 
@@ -171,7 +177,13 @@ def step_render(args: argparse.Namespace) -> int:
 def step_run(args: argparse.Namespace) -> int:
     wd = _wd(args.out)
     ingest.run(args.src, wd, fps=args.fps, force=args.force)
-    transcribe.run(wd, engine=args.engine, language=args.language, force=args.force)
+    transcribe.run(
+        wd,
+        engine=args.engine,
+        language=args.language,
+        force=args.force,
+        chunk_seconds=args.chunk_seconds,
+    )
     tr = jsonio.read_json(wd / "transcript.json")
     atoms = segment.build_atoms(tr["words"])
     jsonio.write_json(wd / "atoms.json", atoms)
@@ -271,6 +283,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_common(sp)
     sp.add_argument("--engine", default=None, choices=["auto", "groq", "openai", "deepgram", "local"])
     sp.add_argument("--language", default=None)
+    sp.add_argument("--chunk-seconds", type=float, default=600.0,
+                    help="panjang chunk audio untuk API (default 600)")
     sp.set_defaults(func=step_transcribe)
 
     sp = sub.add_parser("segment", help="transkrip → atom")
@@ -316,6 +330,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--engine", default=None)
     sp.add_argument("--language", default=None)
     sp.add_argument("--top-n", type=int, default=15)
+    sp.add_argument("--chunk-seconds", type=float, default=600.0)
     sp.add_argument("--force", action="store_true")
     sp.set_defaults(func=step_run)
 

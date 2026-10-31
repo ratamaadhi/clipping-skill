@@ -281,6 +281,45 @@ def silence_ratio(series: list[tuple[float, float]], threshold_db: float = -40.0
     return silent / len(series)
 
 
+_SIL_START = re.compile(r"silence_start:\s*(-?[0-9.]+)")
+_SIL_END = re.compile(r"silence_end:\s*(-?[0-9.]+)")
+
+
+def detect_silences(
+    path: str, noise_db: float = -35.0, min_dur: float = 0.4
+) -> list[tuple[float, float]]:
+    """Deteksi jeda bicara. Dipakai untuk menaruh batas chunk di tengah keheningan."""
+    cmd = [
+        FFMPEG,
+        "-hide_banner",
+        "-nostats",
+        "-i",
+        path,
+        "-af",
+        f"silencedetect=noise={noise_db:g}dB:d={min_dur:g}",
+        "-f",
+        "null",
+        "-",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
+    blob = proc.stderr or ""
+
+    out: list[tuple[float, float]] = []
+    start: float | None = None
+    for line in blob.splitlines():
+        m = _SIL_START.search(line)
+        if m:
+            start = float(m.group(1))
+            continue
+        m = _SIL_END.search(line)
+        if m and start is not None:
+            end = float(m.group(1))
+            if end > start:
+                out.append((max(0.0, start), end))
+            start = None
+    return out
+
+
 def stats(values: list[float]) -> tuple[float, float]:
     """(mean, stdev) tanpa numpy."""
     if not values:
