@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clipping-skill/schema/transcript.schema.json",
+  "title": "Transcript",
+  "description": "Transkrip word-level yang sudah dinormalisasi. Semua waktu dalam detik absolut terhadap sumber.",
+  "type": "object",
+  "required": ["version", "language", "duration", "words"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"const": "0.1.0"},
+    "source": {"type": "string"},
+    "language": {"type": "string"},
+    "duration": {"type": "number", "minimum": 0},
+    "engine": {"type": "string"},
+    "words": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["i", "w", "start", "end"],
+        "additionalProperties": false,
+        "properties": {
+          "i": {"type": "integer", "minimum": 0, "description": "index kata, monoton naik"},
+          "w": {"type": "string", "description": "kata apa adanya, sudah berpunctuasi bila tersedia"},
+          "start": {"type": "number", "minimum": 0},
+          "end": {"type": "number", "minimum": 0},
+          "speaker": {"type": ["integer", "null"]},
+          "conf": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "segments": {
+      "type": "array",
+      "description": "opsional: segmen tingkat kalimat dari ASR, untuk referensi",
+      "items": {
+        "type": "object",
+        "required": ["start", "end", "text"],
+        "properties": {
+          "start": {"type": "number"},
+          "end": {"type": "number"},
+          "text": {"type": "string"},
+          "speaker": {"type": ["integer", "null"]}
+        }
+      }
+    }
+  }
+}

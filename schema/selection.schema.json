@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clipping-skill/schema/selection.schema.json",
+  "title": "Selection",
+  "description": "Penilaian agent terhadap kandidat. Agent HANYA mengisi axes + evidence + weakest_axis + fix_suggestion. Field total dilarang.",
+  "type": "object",
+  "required": ["version", "candidates"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"const": "0.1.0"},
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "atom_start", "atom_end", "axes", "weakest_axis", "fix_suggestion"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "integer", "minimum": 0},
+          "atom_start": {"type": "integer", "minimum": 0},
+          "atom_end": {"type": "integer", "minimum": 0},
+          "axes": {
+            "type": "object",
+            "required": ["hook", "payoff", "self_contained", "emotional", "concrete", "loop"],
+            "additionalProperties": false,
+            "properties": {
+              "hook": {"$ref": "#/$defs/axis"},
+              "payoff": {"$ref": "#/$defs/axis"},
+              "self_contained": {"$ref": "#/$defs/axis"},
+              "emotional": {"$ref": "#/$defs/axis"},
+              "concrete": {"$ref": "#/$defs/axis"},
+              "loop": {"$ref": "#/$defs/axis"}
+            }
+          },
+          "weakest_axis": {
+            "enum": ["hook", "payoff", "self_contained", "emotional", "concrete", "loop"]
+          },
+          "fix_suggestion": {"type": "string", "minLength": 8, "maxLength": 240}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "axis": {
+      "type": "object",
+      "required": ["score", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "score": {"type": "number", "minimum": 0, "maximum": 10},
+        "evidence": {
+          "type": "string",
+          "minLength": 3,
+          "description": "kutipan persis dari transkrip kandidat; kosong = skor tidak valid"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,2075 @@
+{
+  "version": "0.1.0",
+  "source": "synthetic://demo",
+  "language": "id",
+  "duration": 123.306,
+  "engine": "synthetic",
+  "words": [
+    {
+      "i": 0,
+      "w": "Oke",
+      "start": 0.0,
+      "end": 0.231,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 1,
+      "w": "jadi",
+      "start": 0.291,
+      "end": 0.598,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 2,
+      "w": "hari",
+      "start": 0.658,
+      "end": 0.966,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 3,
+      "w": "ini",
+      "start": 1.026,
+      "end": 1.257,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 4,
+      "w": "gue",
+      "start": 1.317,
+      "end": 1.548,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 5,
+      "w": "mau",
+      "start": 1.608,
+      "end": 1.838,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 6,
+      "w": "bahas",
+      "start": 1.898,
+      "end": 2.283,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 7,
+      "w": "satu",
+      "start": 2.343,
+      "end": 2.651,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 8,
+      "w": "hal",
+      "start": 2.711,
+      "end": 2.942,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 9,
+      "w": "yang",
+      "start": 3.002,
+      "end": 3.309,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 10,
+      "w": "mungkin",
+      "start": 3.369,
+      "end": 3.908,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 11,
+      "w": "bikin",
+      "start": 3.968,
+      "end": 4.352,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 12,
+      "w": "kalian",
+      "start": 4.412,
+      "end": 4.874,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 13,
+      "w": "kaget.",
+      "start": 4.934,
+      "end": 5.318,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 14,
+      "w": "Eee",
+      "start": 6.218,
+      "end": 6.449,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 15,
+      "w": "jadi",
+      "start": 6.509,
+      "end": 6.817,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 16,
+      "w": "ceritanya",
+      "start": 6.877,
+      "end": 7.569,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 17,
+      "w": "gue",
+      "start": 7.629,
+      "end": 7.86,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 18,
+      "w": "udah",
+      "start": 7.92,
+      "end": 8.228,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 19,
+      "w": "nyoba",
+      "start": 8.288,
+      "end": 8.672,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 20,
+      "w": "dua",
+      "start": 8.732,
+      "end": 8.963,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 21,
+      "w": "tool",
+      "start": 9.023,
+      "end": 9.331,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 22,
+      "w": "coding",
+      "start": 9.391,
+      "end": 9.852,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 23,
+      "w": "AI",
+      "start": 9.912,
+      "end": 10.066,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 24,
+      "w": "selama",
+      "start": 10.126,
+      "end": 10.588,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 25,
+      "w": "tiga",
+      "start": 10.648,
+      "end": 10.955,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 26,
+      "w": "bulan",
+      "start": 11.015,
+      "end": 11.4,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 27,
+      "w": "terakhir.",
+      "start": 11.46,
+      "end": 12.075,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 28,
+      "w": "Pertama",
+      "start": 12.975,
+      "end": 13.514,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 29,
+      "w": "itu",
+      "start": 13.574,
+      "end": 13.805,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 30,
+      "w": "Codex,",
+      "start": 13.865,
+      "end": 14.249,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 31,
+      "w": "kedua",
+      "start": 14.469,
+      "end": 14.854,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 32,
+      "w": "itu",
+      "start": 14.914,
+      "end": 15.145,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 33,
+      "w": "Claude.",
+      "start": 15.205,
+      "end": 15.666,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 34,
+      "w": "Nah",
+      "start": 16.566,
+      "end": 16.797,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 35,
+      "w": "yang",
+      "start": 16.857,
+      "end": 17.165,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 36,
+      "w": "menarik",
+      "start": 17.225,
+      "end": 17.763,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 37,
+      "w": "itu",
+      "start": 17.823,
+      "end": 18.054,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 38,
+      "w": "bedanya",
+      "start": 18.114,
+      "end": 18.652,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 39,
+      "w": "bukan",
+      "start": 18.712,
+      "end": 19.097,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 40,
+      "w": "di",
+      "start": 19.157,
+      "end": 19.311,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 41,
+      "w": "kecepatan,",
+      "start": 19.371,
+      "end": 20.063,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 42,
+      "w": "tapi",
+      "start": 20.283,
+      "end": 20.591,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 43,
+      "w": "di",
+      "start": 20.651,
+      "end": 20.805,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 44,
+      "w": "cara",
+      "start": 20.865,
+      "end": 21.172,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 45,
+      "w": "mereka",
+      "start": 21.232,
+      "end": 21.694,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 46,
+      "w": "mikir.",
+      "start": 21.754,
+      "end": 22.138,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 47,
+      "w": "Contohnya",
+      "start": 23.038,
+      "end": 23.731,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 48,
+      "w": "waktu",
+      "start": 23.791,
+      "end": 24.175,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 49,
+      "w": "gue",
+      "start": 24.235,
+      "end": 24.466,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 50,
+      "w": "minta",
+      "start": 24.526,
+      "end": 24.911,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 51,
+      "w": "bikin",
+      "start": 24.971,
+      "end": 25.355,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 52,
+      "w": "endpoint",
+      "start": 25.415,
+      "end": 26.031,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 53,
+      "w": "baru,",
+      "start": 26.091,
+      "end": 26.398,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 54,
+      "w": "Codex",
+      "start": 26.618,
+      "end": 27.003,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 55,
+      "w": "langsung",
+      "start": 27.063,
+      "end": 27.678,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 56,
+      "w": "nulis",
+      "start": 27.738,
+      "end": 28.123,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 57,
+      "w": "kodenya.",
+      "start": 28.183,
+      "end": 28.722,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 58,
+      "w": "Tapi",
+      "start": 29.622,
+      "end": 29.929,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 59,
+      "w": "Claude",
+      "start": 29.989,
+      "end": 30.451,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 60,
+      "w": "malah",
+      "start": 30.511,
+      "end": 30.895,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 61,
+      "w": "balik",
+      "start": 30.955,
+      "end": 31.34,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 62,
+      "w": "nanya",
+      "start": 31.4,
+      "end": 31.785,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 63,
+      "w": "dulu,",
+      "start": 31.845,
+      "end": 32.152,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 64,
+      "w": "ini",
+      "start": 32.372,
+      "end": 32.603,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 65,
+      "w": "datanya",
+      "start": 32.663,
+      "end": 33.202,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 66,
+      "w": "dari",
+      "start": 33.262,
+      "end": 33.569,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 67,
+      "w": "mana",
+      "start": 33.629,
+      "end": 33.937,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 68,
+      "w": "dan",
+      "start": 33.997,
+      "end": 34.228,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 69,
+      "w": "siapa",
+      "start": 34.288,
+      "end": 34.672,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 70,
+      "w": "yang",
+      "start": 34.732,
+      "end": 35.04,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 71,
+      "w": "akses.",
+      "start": 35.1,
+      "end": 35.485,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 72,
+      "w": "Dan",
+      "start": 36.385,
+      "end": 36.615,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 73,
+      "w": "menurut",
+      "start": 36.675,
+      "end": 37.214,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 74,
+      "w": "gue",
+      "start": 37.274,
+      "end": 37.505,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 75,
+      "w": "itu",
+      "start": 37.565,
+      "end": 37.795,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 76,
+      "w": "justru",
+      "start": 37.855,
+      "end": 38.317,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 77,
+      "w": "yang",
+      "start": 38.377,
+      "end": 38.685,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 78,
+      "w": "bikin",
+      "start": 38.745,
+      "end": 39.129,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 79,
+      "w": "hasilnya",
+      "start": 39.189,
+      "end": 39.805,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 80,
+      "w": "lebih",
+      "start": 39.865,
+      "end": 40.249,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 81,
+      "w": "bener.",
+      "start": 40.309,
+      "end": 40.694,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 82,
+      "w": "Jadi",
+      "start": 41.594,
+      "end": 41.902,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 83,
+      "w": "intinya",
+      "start": 41.962,
+      "end": 42.5,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 84,
+      "w": "gue",
+      "start": 42.56,
+      "end": 42.791,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 85,
+      "w": "nemu",
+      "start": 42.851,
+      "end": 43.158,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 86,
+      "w": "tiga",
+      "start": 43.218,
+      "end": 43.526,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 87,
+      "w": "perbedaan",
+      "start": 43.586,
+      "end": 44.278,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 88,
+      "w": "besar",
+      "start": 44.338,
+      "end": 44.723,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 89,
+      "w": "yang",
+      "start": 44.783,
+      "end": 45.091,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 90,
+      "w": "bikin",
+      "start": 45.151,
+      "end": 45.535,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 91,
+      "w": "gue",
+      "start": 45.595,
+      "end": 45.826,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 92,
+      "w": "milih",
+      "start": 45.886,
+      "end": 46.271,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 93,
+      "w": "salah",
+      "start": 46.331,
+      "end": 46.715,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 94,
+      "w": "satunya.",
+      "start": 46.775,
+      "end": 47.314,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 95,
+      "w": "Yang",
+      "start": 48.214,
+      "end": 48.522,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 96,
+      "w": "pertama",
+      "start": 48.582,
+      "end": 49.12,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 97,
+      "w": "soal",
+      "start": 49.18,
+      "end": 49.488,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 98,
+      "w": "konteks,",
+      "start": 49.548,
+      "end": 50.086,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 99,
+      "w": "Claude",
+      "start": 50.306,
+      "end": 50.768,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 100,
+      "w": "bisa",
+      "start": 50.828,
+      "end": 51.135,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 101,
+      "w": "inget",
+      "start": 51.195,
+      "end": 51.58,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 102,
+      "w": "delapan",
+      "start": 51.64,
+      "end": 52.178,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 103,
+      "w": "file",
+      "start": 52.238,
+      "end": 52.546,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 104,
+      "w": "sekaligus",
+      "start": 52.606,
+      "end": 53.298,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 105,
+      "w": "tanpa",
+      "start": 53.358,
+      "end": 53.743,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 106,
+      "w": "gue",
+      "start": 53.803,
+      "end": 54.034,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 107,
+      "w": "ulang.",
+      "start": 54.094,
+      "end": 54.478,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 108,
+      "w": "Yang",
+      "start": 55.378,
+      "end": 55.686,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 109,
+      "w": "kedua",
+      "start": 55.746,
+      "end": 56.131,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 110,
+      "w": "soal",
+      "start": 56.191,
+      "end": 56.498,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 111,
+      "w": "debugging,",
+      "start": 56.558,
+      "end": 57.251,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 112,
+      "w": "dia",
+      "start": 57.471,
+      "end": 57.702,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 113,
+      "w": "bisa",
+      "start": 57.762,
+      "end": 58.069,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 114,
+      "w": "nemu",
+      "start": 58.129,
+      "end": 58.437,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 115,
+      "w": "bug",
+      "start": 58.497,
+      "end": 58.728,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 116,
+      "w": "yang",
+      "start": 58.788,
+      "end": 59.095,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 117,
+      "w": "gue",
+      "start": 59.155,
+      "end": 59.386,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 118,
+      "w": "sendiri",
+      "start": 59.446,
+      "end": 59.985,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 119,
+      "w": "udah",
+      "start": 60.045,
+      "end": 60.352,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 120,
+      "w": "nyerah",
+      "start": 60.412,
+      "end": 60.874,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 121,
+      "w": "nyari.",
+      "start": 60.934,
+      "end": 61.318,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 122,
+      "w": "Yang",
+      "start": 62.218,
+      "end": 62.526,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 123,
+      "w": "ketiga",
+      "start": 62.586,
+      "end": 63.048,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 124,
+      "w": "soal",
+      "start": 63.108,
+      "end": 63.415,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 125,
+      "w": "harga,",
+      "start": 63.475,
+      "end": 63.86,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 126,
+      "w": "ini",
+      "start": 64.08,
+      "end": 64.311,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 127,
+      "w": "yang",
+      "start": 64.371,
+      "end": 64.678,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 128,
+      "w": "paling",
+      "start": 64.738,
+      "end": 65.2,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 129,
+      "w": "bikin",
+      "start": 65.26,
+      "end": 65.645,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 130,
+      "w": "gue",
+      "start": 65.705,
+      "end": 65.935,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 131,
+      "w": "mikir",
+      "start": 65.995,
+      "end": 66.38,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 132,
+      "w": "ulang.",
+      "start": 66.44,
+      "end": 66.825,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 133,
+      "w": "Emm",
+      "start": 67.725,
+      "end": 67.955,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 134,
+      "w": "jadi",
+      "start": 68.015,
+      "end": 68.323,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 135,
+      "w": "total",
+      "start": 68.383,
+      "end": 68.768,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 136,
+      "w": "biaya",
+      "start": 68.828,
+      "end": 69.212,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 137,
+      "w": "gue",
+      "start": 69.272,
+      "end": 69.503,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 138,
+      "w": "per",
+      "start": 69.563,
+      "end": 69.794,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 139,
+      "w": "bulan",
+      "start": 69.854,
+      "end": 70.238,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 140,
+      "w": "itu",
+      "start": 70.298,
+      "end": 70.529,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 141,
+      "w": "sekitar",
+      "start": 70.589,
+      "end": 71.128,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 142,
+      "w": "dua",
+      "start": 71.188,
+      "end": 71.418,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 143,
+      "w": "ratus",
+      "start": 71.478,
+      "end": 71.863,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 144,
+      "w": "ribu",
+      "start": 71.923,
+      "end": 72.231,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 145,
+      "w": "rupiah.",
+      "start": 72.291,
+      "end": 72.752,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 146,
+      "w": "Kalau",
+      "start": 73.652,
+      "end": 74.037,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 147,
+      "w": "pakai",
+      "start": 74.097,
+      "end": 74.482,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 148,
+      "w": "yang",
+      "start": 74.542,
+      "end": 74.849,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 149,
+      "w": "satunya",
+      "start": 74.909,
+      "end": 75.448,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 150,
+      "w": "bisa",
+      "start": 75.508,
+      "end": 75.815,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 151,
+      "w": "tiga",
+      "start": 75.875,
+      "end": 76.183,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 152,
+      "w": "kali",
+      "start": 76.243,
+      "end": 76.551,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 153,
+      "w": "lebih",
+      "start": 76.611,
+      "end": 76.995,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 154,
+      "w": "mahal,",
+      "start": 77.055,
+      "end": 77.44,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 155,
+      "w": "dan",
+      "start": 77.66,
+      "end": 77.891,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 156,
+      "w": "itu",
+      "start": 77.951,
+      "end": 78.182,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 157,
+      "w": "gak",
+      "start": 78.242,
+      "end": 78.472,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 158,
+      "w": "masuk",
+      "start": 78.532,
+      "end": 78.917,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 159,
+      "w": "akal",
+      "start": 78.977,
+      "end": 79.285,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 160,
+      "w": "buat",
+      "start": 79.345,
+      "end": 79.652,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 161,
+      "w": "gue.",
+      "start": 79.712,
+      "end": 79.943,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 162,
+      "w": "Makanya",
+      "start": 80.843,
+      "end": 81.382,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 163,
+      "w": "gue",
+      "start": 81.442,
+      "end": 81.672,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 164,
+      "w": "akhirnya",
+      "start": 81.732,
+      "end": 82.348,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 165,
+      "w": "pindah",
+      "start": 82.408,
+      "end": 82.869,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 166,
+      "w": "total",
+      "start": 82.929,
+      "end": 83.314,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 167,
+      "w": "ke",
+      "start": 83.374,
+      "end": 83.528,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 168,
+      "w": "Claude",
+      "start": 83.588,
+      "end": 84.049,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 169,
+      "w": "bulan",
+      "start": 84.109,
+      "end": 84.494,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 170,
+      "w": "lalu.",
+      "start": 84.554,
+      "end": 84.862,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 171,
+      "w": "Tapi",
+      "start": 85.762,
+      "end": 86.069,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 172,
+      "w": "jujur",
+      "start": 86.129,
+      "end": 86.514,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 173,
+      "w": "ada",
+      "start": 86.574,
+      "end": 86.805,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 174,
+      "w": "satu",
+      "start": 86.865,
+      "end": 87.172,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 175,
+      "w": "hal",
+      "start": 87.232,
+      "end": 87.463,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 176,
+      "w": "yang",
+      "start": 87.523,
+      "end": 87.831,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 177,
+      "w": "masih",
+      "start": 87.891,
+      "end": 88.275,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 178,
+      "w": "bikin",
+      "start": 88.335,
+      "end": 88.72,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 179,
+      "w": "gue",
+      "start": 88.78,
+      "end": 89.011,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 180,
+      "w": "kesel",
+      "start": 89.071,
+      "end": 89.455,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 181,
+      "w": "sampai",
+      "start": 89.515,
+      "end": 89.977,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 182,
+      "w": "sekarang.",
+      "start": 90.037,
+      "end": 90.652,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 183,
+      "w": "Kalau",
+      "start": 91.552,
+      "end": 91.937,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 184,
+      "w": "projectnya",
+      "start": 91.997,
+      "end": 92.766,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 185,
+      "w": "udah",
+      "start": 92.826,
+      "end": 93.134,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 186,
+      "w": "gede",
+      "start": 93.194,
+      "end": 93.502,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 187,
+      "w": "banget,",
+      "start": 93.562,
+      "end": 94.023,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 188,
+      "w": "dia",
+      "start": 94.243,
+      "end": 94.474,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 189,
+      "w": "suka",
+      "start": 94.534,
+      "end": 94.842,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 190,
+      "w": "lupa",
+      "start": 94.902,
+      "end": 95.209,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 191,
+      "w": "konteks",
+      "start": 95.269,
+      "end": 95.808,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 192,
+      "w": "yang",
+      "start": 95.868,
+      "end": 96.175,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 193,
+      "w": "tadi",
+      "start": 96.235,
+      "end": 96.543,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 194,
+      "w": "udah",
+      "start": 96.603,
+      "end": 96.911,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 195,
+      "w": "gue",
+      "start": 96.971,
+      "end": 97.202,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 196,
+      "w": "kasih.",
+      "start": 97.262,
+      "end": 97.646,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 197,
+      "w": "Jadi",
+      "start": 98.546,
+      "end": 98.854,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 198,
+      "w": "saran",
+      "start": 98.914,
+      "end": 99.298,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 199,
+      "w": "gue,",
+      "start": 99.358,
+      "end": 99.589,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 200,
+      "w": "kalau",
+      "start": 99.809,
+      "end": 100.194,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 201,
+      "w": "kalian",
+      "start": 100.254,
+      "end": 100.715,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 202,
+      "w": "baru",
+      "start": 100.775,
+      "end": 101.083,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 203,
+      "w": "mulai,",
+      "start": 101.143,
+      "end": 101.528,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 204,
+      "w": "jangan",
+      "start": 101.748,
+      "end": 102.209,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 205,
+      "w": "langsung",
+      "start": 102.269,
+      "end": 102.885,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 206,
+      "w": "pilih",
+      "start": 102.945,
+      "end": 103.329,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 207,
+      "w": "yang",
+      "start": 103.389,
+      "end": 103.697,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 208,
+      "w": "paling",
+      "start": 103.757,
+      "end": 104.218,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 209,
+      "w": "mahal.",
+      "start": 104.278,
+      "end": 104.663,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 210,
+      "w": "Coba",
+      "start": 105.563,
+      "end": 105.871,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 211,
+      "w": "dulu",
+      "start": 105.931,
+      "end": 106.238,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 212,
+      "w": "yang",
+      "start": 106.298,
+      "end": 106.606,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 213,
+      "w": "gratis",
+      "start": 106.666,
+      "end": 107.128,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 214,
+      "w": "selama",
+      "start": 107.188,
+      "end": 107.649,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 215,
+      "w": "dua",
+      "start": 107.709,
+      "end": 107.94,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 216,
+      "w": "minggu,",
+      "start": 108.0,
+      "end": 108.462,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 217,
+      "w": "rasain",
+      "start": 108.682,
+      "end": 109.143,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 218,
+      "w": "sendiri",
+      "start": 109.203,
+      "end": 109.742,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 219,
+      "w": "ritmenya.",
+      "start": 109.802,
+      "end": 110.417,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 220,
+      "w": "Karena",
+      "start": 111.317,
+      "end": 111.778,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 221,
+      "w": "tool",
+      "start": 111.838,
+      "end": 112.146,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 222,
+      "w": "sebagus",
+      "start": 112.206,
+      "end": 112.745,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 223,
+      "w": "apapun",
+      "start": 112.805,
+      "end": 113.266,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 224,
+      "w": "tetap",
+      "start": 113.326,
+      "end": 113.711,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 225,
+      "w": "balik",
+      "start": 113.771,
+      "end": 114.155,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 226,
+      "w": "lagi",
+      "start": 114.215,
+      "end": 114.523,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 227,
+      "w": "ke",
+      "start": 114.583,
+      "end": 114.737,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 228,
+      "w": "cara",
+      "start": 114.797,
+      "end": 115.105,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 229,
+      "w": "kalian",
+      "start": 115.165,
+      "end": 115.626,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 230,
+      "w": "kerja.",
+      "start": 115.686,
+      "end": 116.071,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 231,
+      "w": "Oke",
+      "start": 116.971,
+      "end": 117.202,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 232,
+      "w": "segitu",
+      "start": 117.262,
+      "end": 117.723,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 233,
+      "w": "dulu,",
+      "start": 117.783,
+      "end": 118.091,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 234,
+      "w": "kalau",
+      "start": 118.311,
+      "end": 118.695,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 235,
+      "w": "kalian",
+      "start": 118.755,
+      "end": 119.217,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 236,
+      "w": "punya",
+      "start": 119.277,
+      "end": 119.662,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 237,
+      "w": "pengalaman",
+      "start": 119.722,
+      "end": 120.491,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 238,
+      "w": "beda",
+      "start": 120.551,
+      "end": 120.858,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 239,
+      "w": "tulis",
+      "start": 120.918,
+      "end": 121.303,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 240,
+      "w": "di",
+      "start": 121.363,
+      "end": 121.517,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 241,
+      "w": "komentar",
+      "start": 121.577,
+      "end": 122.192,
+      "speaker": 0,
+      "conf": 0.94
+    },
+    {
+      "i": 242,
+      "w": "ya.",
+      "start": 122.252,
+      "end": 122.406,
+      "speaker": 0,
+      "conf": 0.94
+    }
+  ],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 5.868,
+      "text": "Oke jadi hari ini gue mau bahas satu hal yang mungkin bikin kalian kaget.",
+      "speaker": 0
+    },
+    {
+      "start": 6.218,
+      "end": 12.625,
+      "text": "Eee jadi ceritanya gue udah nyoba dua tool coding AI selama tiga bulan terakhir.",
+      "speaker": 0
+    },
+    {
+      "start": 12.975,
+      "end": 16.216,
+      "text": "Pertama itu Codex, kedua itu Claude.",
+      "speaker": 0
+    },
+    {
+      "start": 16.566,
+      "end": 22.688,
+      "text": "Nah yang menarik itu bedanya bukan di kecepatan, tapi di cara mereka mikir.",
+      "speaker": 0
+    },
+    {
+      "start": 23.038,
+      "end": 29.272,
+      "text": "Contohnya waktu gue minta bikin endpoint baru, Codex langsung nulis kodenya.",
+      "speaker": 0
+    },
+    {
+      "start": 29.622,
+      "end": 36.035,
+      "text": "Tapi Claude malah balik nanya dulu, ini datanya dari mana dan siapa yang akses.",
+      "speaker": 0
+    },
+    {
+      "start": 36.385,
+      "end": 41.244,
+      "text": "Dan menurut gue itu justru yang bikin hasilnya lebih bener.",
+      "speaker": 0
+    },
+    {
+      "start": 41.594,
+      "end": 47.864,
+      "text": "Jadi intinya gue nemu tiga perbedaan besar yang bikin gue milih salah satunya.",
+      "speaker": 0
+    },
+    {
+      "start": 48.214,
+      "end": 55.028,
+      "text": "Yang pertama soal konteks, Claude bisa inget delapan file sekaligus tanpa gue ulang.",
+      "speaker": 0
+    },
+    {
+      "start": 55.378,
+      "end": 61.868,
+      "text": "Yang kedua soal debugging, dia bisa nemu bug yang gue sendiri udah nyerah nyari.",
+      "speaker": 0
+    },
+    {
+      "start": 62.218,
+      "end": 67.375,
+      "text": "Yang ketiga soal harga, ini yang paling bikin gue mikir ulang.",
+      "speaker": 0
+    },
+    {
+      "start": 67.725,
+      "end": 73.302,
+      "text": "Emm jadi total biaya gue per bulan itu sekitar dua ratus ribu rupiah.",
+      "speaker": 0
+    },
+    {
+      "start": 73.652,
+      "end": 80.493,
+      "text": "Kalau pakai yang satunya bisa tiga kali lebih mahal, dan itu gak masuk akal buat gue.",
+      "speaker": 0
+    },
+    {
+      "start": 80.843,
+      "end": 85.412,
+      "text": "Makanya gue akhirnya pindah total ke Claude bulan lalu.",
+      "speaker": 0
+    },
+    {
+      "start": 85.762,
+      "end": 91.202,
+      "text": "Tapi jujur ada satu hal yang masih bikin gue kesel sampai sekarang.",
+      "speaker": 0
+    },
+    {
+      "start": 91.552,
+      "end": 98.196,
+      "text": "Kalau projectnya udah gede banget, dia suka lupa konteks yang tadi udah gue kasih.",
+      "speaker": 0
+    },
+    {
+      "start": 98.546,
+      "end": 105.213,
+      "text": "Jadi saran gue, kalau kalian baru mulai, jangan langsung pilih yang paling mahal.",
+      "speaker": 0
+    },
+    {
+      "start": 105.563,
+      "end": 110.967,
+      "text": "Coba dulu yang gratis selama dua minggu, rasain sendiri ritmenya.",
+      "speaker": 0
+    },
+    {
+      "start": 111.317,
+      "end": 116.621,
+      "text": "Karena tool sebagus apapun tetap balik lagi ke cara kalian kerja.",
+      "speaker": 0
+    },
+    {
+      "start": 116.971,
+      "end": 122.956,
+      "text": "Oke segitu dulu, kalau kalian punya pengalaman beda tulis di komentar ya.",
+      "speaker": 0
+    }
+  ]
+}

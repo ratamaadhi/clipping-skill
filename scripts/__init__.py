@@ -1,0 +1,1 @@
+"""clipping-skill — pipeline modul."""

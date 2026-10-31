@@ -1,0 +1,15 @@
+work/
+out/
+*.mp4
+*.wav
+*.m4a
+*.mp3
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.ass
+!templates/*.ass.tmpl
+.DS_Store
