@@ -104,6 +104,12 @@ def _vf_chain(
     # motion graphics SEBELUM caption, supaya caption selalu di lapisan teratas
     parts.extend(motion_filters or [])
 
+    # zoompan menulis timestamp sendiri (indeks/fps) dan bisa melenceng pecahan
+    # milidetik dari grid 25/30 fps. Konversi `-fps_mode cfr` lalu membuang frame
+    # yang dianggap telat -> terlihat sebagai frame drop. Paku ke indeks frame.
+    if any(f.startswith("zoompan") for f in (motion_filters or [])):
+        parts.append(f"setpts=N/({fps:g}*TB)")
+
     if ass_rel:
         sub = f"subtitles={ass_rel}"
         if fontsdir:
@@ -265,7 +271,7 @@ def render_clip(
         "-fps_mode",
         "cfr",
         "-r",
-        "30",
+        f"{fps:g}",
         "-movflags",
         "+faststart",
         str(out),

@@ -257,7 +257,9 @@ def build(work_dir: str | Path, top_n: int = 5) -> dict[str, Any]:
         "output": {
             "width": 1080,
             "height": 1920,
-            "fps": 30.0,
+            # Ikuti fps sumber (maks 30). Memaksa 30 pada sumber 25 fps
+            # menyisipkan frame duplikat setiap frame ke-6 -> gerakan patah-patah.
+            "fps": min(30.0, round(float(meta["fps"]), 6)),
             "loudness_lufs": -14.0,
             "true_peak_db": -1.0,
         },

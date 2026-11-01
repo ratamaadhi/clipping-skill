@@ -163,3 +163,31 @@ class EdlTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OutputFpsTest(unittest.TestCase):
+    """fps output harus mengikuti sumber.
+
+    Memaksa 30 pada sumber 25 fps menyisipkan frame duplikat tiap frame ke-6,
+    dan itu terlihat sebagai gerakan patah-patah saat kamera/tangan bergerak.
+    """
+
+    def _build(self, fps: float) -> dict:
+        with tempfile.TemporaryDirectory() as td:
+            wd = make_work(Path(td), top_n=5, top=1)
+            meta = jsonio.read_json(wd / "meta.json")
+            meta["fps"] = fps
+            jsonio.write_json(wd / "meta.json", meta)
+            return edl.build(wd, top_n=1)
+
+    def test_follows_25fps_source(self) -> None:
+        self.assertEqual(self._build(25.0)["output"]["fps"], 25.0)
+
+    def test_follows_29_97_source(self) -> None:
+        self.assertAlmostEqual(self._build(29.97)["output"]["fps"], 29.97, places=3)
+
+    def test_caps_high_fps_source_at_30(self) -> None:
+        self.assertEqual(self._build(60.0)["output"]["fps"], 30.0)
+
+    def test_30fps_source_unchanged(self) -> None:
+        self.assertEqual(self._build(30.0)["output"]["fps"], 30.0)

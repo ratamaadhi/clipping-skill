@@ -123,3 +123,43 @@ class RenderGuardTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ZoompanTimestampTest(unittest.TestCase):
+    """zoompan menulis timestamp sendiri dan bisa melenceng dari grid fps.
+
+    Tanpa dipaku, konversi CFR membuang frame yang dianggap telat — terlihat
+    sebagai frame drop tepat setelah punch-in.
+    """
+
+    def _edl(self, fps: float = 25.0) -> dict:
+        return {
+            "source": {"width": 1920, "height": 1080, "audio_rate": 48000, "path": "x.mp4"},
+            "output": {"fps": fps, "loudness_lufs": -14.0, "true_peak_db": -1.0},
+        }
+
+    def test_setpts_added_after_zoompan(self) -> None:
+        chain = render._vf_chain(
+            self._edl(), {"reframe": {"mode": "center"}}, "c.ass", None,
+            ["zoompan=z='1.0':d=1:s=1080x1920:fps=25"], 25.0,
+        )
+        self.assertIn("setpts=N/(25*TB)", chain)
+
+    def test_setpts_follows_zoompan(self) -> None:
+        chain = render._vf_chain(
+            self._edl(), {"reframe": {"mode": "center"}}, "c.ass", None,
+            ["zoompan=z='1.0':d=1:s=1080x1920:fps=25"], 25.0,
+        )
+        self.assertLess(chain.index("zoompan"), chain.index("setpts="))
+        self.assertLess(chain.index("setpts="), chain.index("subtitles="))
+
+    def test_no_setpts_without_motion(self) -> None:
+        chain = render._vf_chain(self._edl(), {"reframe": {"mode": "center"}}, "c.ass", None)
+        self.assertNotIn("setpts=", chain)
+
+    def test_no_setpts_without_zoompan(self) -> None:
+        chain = render._vf_chain(
+            self._edl(), {"reframe": {"mode": "center"}}, "c.ass", None,
+            ["drawbox=x=0:y=0:w=100:h=10:color=black@0.4:t=fill"], 25.0,
+        )
+        self.assertNotIn("setpts=", chain)
