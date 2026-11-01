@@ -104,9 +104,13 @@ def _vf_chain(
     # motion graphics SEBELUM caption, supaya caption selalu di lapisan teratas
     parts.extend(motion_filters or [])
 
-    # zoompan menulis timestamp sendiri (indeks/fps) dan bisa melenceng pecahan
-    # milidetik dari grid 25/30 fps. Konversi `-fps_mode cfr` lalu membuang frame
-    # yang dianggap telat -> terlihat sebagai frame drop. Paku ke indeks frame.
+    # PENGAMAN, bukan perbaikan bug. zoompan menulis timestamp sendiri
+    # (indeks/fps) sehingga secara teori bisa melenceng dari grid fps dan
+    # memicu pembuangan frame saat konversi CFR. Pada pengujian dengan tiga
+    # klip nyata, keluaran tanpa baris ini juga bersih (0 celah, 0 duplikat),
+    # jadi manfaatnya belum terbukti — biayanya nyaris nol, dijaga sebagai
+    # jaring pengaman. Periksa dengan `python3 -m scripts.verify` sebelum
+    # menyimpulkan ada frame hilang.
     if any(f.startswith("zoompan") for f in (motion_filters or [])):
         parts.append(f"setpts=N/({fps:g}*TB)")
 
