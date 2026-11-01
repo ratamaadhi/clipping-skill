@@ -34,6 +34,36 @@ class ValidateTest(unittest.TestCase):
     def test_valid_selection_passes(self) -> None:
         self.assertEqual(score.validate_selection(self.valid, self.cands), [])
 
+    def test_agent_can_refine_bounds_with_atoms(self) -> None:
+        """Prefilter cuma usul; agent boleh koreksi batas selama masih wajar."""
+        atoms = jsonio.read_json(self.wd / "atoms.json")
+        atoms = atoms["atoms"] if isinstance(atoms, dict) else atoms
+        sel = copy.deepcopy(self.valid)
+        entry = sel["candidates"][0]
+        entry["atom_start"] = 0
+        entry["atom_end"] = min(4, len(atoms) - 1)
+        if atoms[entry["atom_end"]]["end"] - atoms[0]["start"] < score.MIN_CLIP_S:
+            self.skipTest("atom sintetis terlalu pendek untuk batas minimum")
+        errors = score.validate_selection(sel, self.cands, atoms)
+        self.assertEqual(errors, [])
+
+    def test_rejects_out_of_bounds_range(self) -> None:
+        atoms = jsonio.read_json(self.wd / "atoms.json")
+        atoms = atoms["atoms"] if isinstance(atoms, dict) else atoms
+        sel = copy.deepcopy(self.valid)
+        sel["candidates"][0]["atom_end"] = len(atoms) + 5
+        errors = score.validate_selection(sel, self.cands, atoms)
+        self.assertTrue(any("tidak valid" in e for e in errors), errors)
+
+    def test_rejects_reversed_range(self) -> None:
+        atoms = jsonio.read_json(self.wd / "atoms.json")
+        atoms = atoms["atoms"] if isinstance(atoms, dict) else atoms
+        sel = copy.deepcopy(self.valid)
+        sel["candidates"][0]["atom_start"] = 5
+        sel["candidates"][0]["atom_end"] = 3
+        errors = score.validate_selection(sel, self.cands, atoms)
+        self.assertTrue(any("tidak valid" in e for e in errors), errors)
+
     def test_rejects_missing_axis(self) -> None:
         bad = copy.deepcopy(self.valid)
         del bad["candidates"][0]["axes"]["loop"]

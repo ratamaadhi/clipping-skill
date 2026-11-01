@@ -67,6 +67,7 @@ def _vf_chain(
     ass_rel: str | None = None,
     fontsdir: str | None = None,
     motion_filters: list[str] | None = None,
+    fps: float = 30.0,
 ) -> str:
     src = edl["source"]
     reframe = clip.get("reframe", {}) or {}
@@ -82,6 +83,12 @@ def _vf_chain(
         parts.append(f"crop={cw}:{ch}:{x}:{y}")
     parts.append(f"scale={TARGET_W}:{TARGET_H}:flags=lanczos")
     parts.append("setsar=1")
+
+    # Normalisasi fps SEBELUM motion. zoompan memakai d=1, jadi kalau input 25fps
+    # dibiarkan, 25 frame masuk -> 25 frame keluar tapi ditimestamppi 30fps:
+    # video jadi 0,83x lebih cepat dan audio desync.
+    if motion_filters:
+        parts.append(f"fps={fps:g}")
 
     # motion graphics SEBELUM caption, supaya caption selalu di lapisan teratas
     parts.extend(motion_filters or [])
@@ -136,7 +143,7 @@ def render_clip(
     if show_progress:
         base_motion.append(motion.progress_track_filter())
 
-    base = _vf_chain(edl, clip, None, None, base_motion)
+    base = _vf_chain(edl, clip, None, None, base_motion, fps)
 
     parts: list[str] = [f"[0:v]{base}[v0]"]
     last = "v0"

@@ -36,6 +36,24 @@ EMPHATIC_WORDS = frozenset(
 # Ambang skor minimum supaya emphasis benar-benar selektif.
 MIN_EMPHASIS_SCORE = 2.0
 
+# Artefak ASR: kata yang muncul karena model "mendengar" bunyi tic verbal
+# ("Eh, ya" -> "Ejaan"). Hanya dibuang kalau berdiri sendiri di awal ujaran,
+# supaya "ejaan" yang benar-benar berarti ejaan tetap aman.
+ARTIFACT_WORDS = frozenset({"ejaan", "ejaannya"})
+ARTIFACT_GAP = 0.25
+
+
+def _drop_artifacts(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for i, w in enumerate(words):
+        norm = "".join(c for c in str(w["w"]).lower() if c.isalpha())
+        if norm in ARTIFACT_WORDS:
+            prev_end = float(words[i - 1]["end"]) if i else -99.0
+            if i == 0 or float(w["start"]) - prev_end >= ARTIFACT_GAP:
+                continue
+        out.append(w)
+    return out
+
 
 def group_words(
     words: list[dict[str, Any]],
@@ -44,6 +62,7 @@ def group_words(
     gap_break: float = GAP_BREAK,
 ) -> list[dict[str, Any]]:
     """Kelompokkan kata jadi frasa pendek. Ini yang bikin caption terbaca, bukan dinding teks."""
+    words = _drop_artifacts(words)
     phrases: list[dict[str, Any]] = []
     cur: list[dict[str, Any]] = []
 

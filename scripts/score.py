@@ -33,6 +33,10 @@ HOOK_PENALTY = 0.5
 SELF_CONTAINED_FLOOR = 4.0
 SELF_CONTAINED_PENALTY = 0.7
 
+# Batas durasi klip yang masuk akal untuk short vertikal.
+MIN_CLIP_S = 8.0
+MAX_CLIP_S = 90.0
+
 FORBIDDEN_FIELDS = ("total", "final", "score_total", "overall", "virality", "viral_score")
 
 AXIS_GUIDE = {
@@ -138,8 +142,19 @@ def build_prompt(work_dir: str | Path) -> str:
 # ---------------------------------------------------------------------------
 
 
-def validate_selection(sel: dict[str, Any], cands: list[dict[str, Any]]) -> list[str]:
-    """Kembalikan daftar error. Kosong = valid."""
+def validate_selection(
+    sel: dict[str, Any],
+    cands: list[dict[str, Any]],
+    atoms: list[dict[str, Any]] | None = None,
+) -> list[str]:
+    """Kembalikan daftar error. Kosong = valid.
+
+    `atoms` opsional. Kalau diberikan, agent boleh mengusulkan rentang atom
+    sendiri (bukan hanya yang ada di candidates.json) selama masih di dalam
+    batas dan durasinya wajar. Alasannya: prefilter memilih berdasarkan sinyal
+    murah (WPM, energi), dan untuk talkshow itu justru melewatkan puncak
+    naratif. Agent yang membaca transkrip harus bisa mengoreksi batasnya.
+    """
     errors: list[str] = []
     by_id = {int(c["id"]): c for c in cands}
 
@@ -166,22 +181,47 @@ def validate_selection(sel: dict[str, Any], cands: list[dict[str, Any]]) -> list
                 )
 
         cid = entry.get("id")
-        if not isinstance(cid, int) or cid not in by_id:
-            errors.append(f"{where}: id {cid!r} tidak ada di candidates.json")
+        if not isinstance(cid, int) or isinstance(cid, bool):
+            errors.append(f"{where}: id harus integer")
             continue
         if cid in seen:
             errors.append(f"{where}: id {cid} duplikat")
         seen.add(cid)
 
-        ref = by_id[cid]
-        if entry.get("atom_start") != ref["atom_start"]:
-            errors.append(
-                f"{where}: atom_start {entry.get('atom_start')!r} != {ref['atom_start']} (jangan ubah)"
-            )
-        if entry.get("atom_end") != ref["atom_end"]:
-            errors.append(
-                f"{where}: atom_end {entry.get('atom_end')!r} != {ref['atom_end']} (jangan ubah)"
-            )
+        a0, a1 = entry.get("atom_start"), entry.get("atom_end")
+        if (
+            not isinstance(a0, int)
+            or not isinstance(a1, int)
+            or isinstance(a0, bool)
+            or isinstance(a1, bool)
+        ):
+            errors.append(f"{where}: atom_start/atom_end harus integer")
+            continue
+
+        if atoms is not None:
+            n = len(atoms)
+            if not (0 <= a0 < a1 < n):
+                errors.append(
+                    f"{where}: rentang atom {a0}-{a1} tidak valid "
+                    f"(harus 0 <= start < end <= {n - 1})"
+                )
+                continue
+            dur = float(atoms[a1]["end"]) - float(atoms[a0]["start"])
+            if not (MIN_CLIP_S <= dur <= MAX_CLIP_S):
+                errors.append(
+                    f"{where}: durasi {dur:.1f}s di luar batas {MIN_CLIP_S:g}-{MAX_CLIP_S:g}s"
+                )
+        elif cid not in by_id:
+            errors.append(f"{where}: id {cid} tidak ada di candidates.json")
+            continue
+        else:
+            ref = by_id[cid]
+            if a0 != ref["atom_start"] or a1 != ref["atom_end"]:
+                errors.append(
+                    f"{where}: atom_start/atom_end {a0}-{a1} != "
+                    f"{ref['atom_start']}-{ref['atom_end']} "
+                    "(tanpa atoms, batas tidak boleh diubah)"
+                )
 
         axes = entry.get("axes")
         if not isinstance(axes, dict):
@@ -253,8 +293,10 @@ def score(work_dir: str | Path) -> dict[str, Any]:
     wd = Path(work_dir)
     cands = jsonio.read_json(wd / "candidates.json")
     sel = jsonio.read_json(wd / "selection.json")
+    atoms_doc = jsonio.read_json(wd / "atoms.json")
+    atoms = atoms_doc["atoms"] if isinstance(atoms_doc, dict) else atoms_doc
 
-    errors = validate_selection(sel, cands)
+    errors = validate_selection(sel, cands, atoms)
     if errors:
         raise ValueError(
             "selection.json tidak valid:\n  - " + "\n  - ".join(errors)
@@ -264,21 +306,31 @@ def score(work_dir: str | Path) -> dict[str, Any]:
     finals = [composite(e["axes"])[2] for e in sel["candidates"]]
 
     scored: list[dict[str, Any]] = []
+    from .candidates import span as _span
+
     for entry in sel["candidates"]:
         cid = int(entry["id"])
-        ref = by_id[cid]
+        a0, a1 = int(entry["atom_start"]), int(entry["atom_end"])
+        ref = by_id.get(cid)
+        if ref is not None and (a0, a1) == (int(ref["atom_start"]), int(ref["atom_end"])):
+            span = ref
+            strategy = str(ref.get("strategy", "unknown"))
+        else:
+            # Agent mengoreksi batas dari prefilter (atau mengusulkan rentang baru).
+            span = _span(atoms, a0, a1)
+            strategy = "agent" if ref is None else f"agent:{ref.get('strategy', '?')}"
         base, penalty, final = composite(entry["axes"])
         scored.append(
             {
                 "id": cid,
-                "atom_start": ref["atom_start"],
-                "atom_end": ref["atom_end"],
-                "start": ref["start"],
-                "end": ref["end"],
-                "duration": ref["duration"],
-                "strategy": ref["strategy"],
-                "text": ref["text"],
-                "features": ref.get("features", {}),
+                "atom_start": span["atom_start"],
+                "atom_end": span["atom_end"],
+                "start": span["start"],
+                "end": span["end"],
+                "duration": span["duration"],
+                "strategy": strategy,
+                "text": span["text"],
+                "features": (ref or {}).get("features", {}),
                 "axes": {k: float(entry["axes"][k]["score"]) for k in AXES},
                 "evidence": {k: entry["axes"][k]["evidence"] for k in AXES},
                 "base": base,

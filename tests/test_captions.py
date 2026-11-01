@@ -49,6 +49,33 @@ class GroupWordsTest(unittest.TestCase):
         self.assertEqual(cap.group_words([]), [])
 
 
+class ArtifactTest(unittest.TestCase):
+    def _w(self, text: str, start: float, end: float) -> dict:
+        return {"w": text, "start": start, "end": end}
+
+    def test_leading_artifact_dropped(self) -> None:
+        words = [
+            self._w("Ejaan", 10.0, 10.4),
+            self._w("aku", 10.6, 10.9),
+            self._w("pernah", 10.9, 11.2),
+        ]
+        phrases = cap.group_words(words)
+        joined = " ".join(p["text"] for p in phrases).lower()
+        self.assertNotIn("ejaan", joined)
+        self.assertIn("aku", joined)
+
+    def test_artifact_kept_when_meaningful(self) -> None:
+        """Kalau tidak ada jeda, 'ejaan' mungkin memang katanya — jangan dibuang."""
+        words = [
+            self._w("soal", 10.0, 10.3),
+            self._w("ejaan", 10.3, 10.6),
+            self._w("benar", 10.6, 10.9),
+        ]
+        phrases = cap.group_words(words)
+        joined = " ".join(p["text"] for p in phrases).lower()
+        self.assertIn("ejaan", joined)
+
+
 class EmphasisTest(unittest.TestCase):
     def _phrase(self, text: str) -> dict:
         toks = text.split()
