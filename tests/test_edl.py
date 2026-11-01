@@ -9,6 +9,7 @@ from pathlib import Path
 
 from tests.helpers import make_work
 
+from scripts import edl
 from scripts.lib import jsonio
 
 
@@ -41,16 +42,37 @@ class EdlTest(unittest.TestCase):
         ids = [c["id"] for c in self.edl["clips"]]
         self.assertEqual(len(ids), len(set(ids)))
 
-    def test_single_segment_v0(self) -> None:
+    def test_segments_are_ordered_and_contiguous_in_output(self) -> None:
+        """Multi-segment: jeda dibuang, tapi timeline output harus rapat tanpa lubang."""
         for clip in self.edl["clips"]:
-            self.assertEqual(len(clip["segments"]), 1)
-            seg = clip["segments"][0]
-            self.assertLess(seg["src_start"], seg["src_end"])
+            segs = clip["segments"]
+            self.assertGreaterEqual(len(segs), 1, msg=clip["id"])
+            expected = 0.0
+            for i, seg in enumerate(segs):
+                self.assertLess(seg["src_start"], seg["src_end"], msg=clip["id"])
+                self.assertAlmostEqual(seg["out_start"], expected, places=3, msg=clip["id"])
+                expected += seg["src_end"] - seg["src_start"]
+                if i:
+                    self.assertGreater(
+                        seg["src_start"], segs[i - 1]["src_end"], msg=clip["id"]
+                    )
+
+    def test_dead_air_is_removed(self) -> None:
+        """Setiap segmen harus berisi bicara; jeda panjang tidak masuk output."""
+        for clip in self.edl["clips"]:
+            caps = clip["captions"]
+            self.assertTrue(caps, msg=clip["id"])
+            for seg in clip["segments"]:
+                covered = any(
+                    cap["src_start"] >= seg["src_start"] - 0.01
+                    and cap["src_start"] < seg["src_end"]
+                    for cap in caps
+                )
+                self.assertTrue(covered, msg=f"{clip['id']} segmen tanpa bicara: {seg}")
 
     def test_captions_within_clip(self) -> None:
         for clip in self.edl["clips"]:
-            seg = clip["segments"][0]
-            dur = seg["src_end"] - seg["src_start"]
+            dur = sum(s["src_end"] - s["src_start"] for s in clip["segments"])
             for cap in clip["captions"]:
                 self.assertGreaterEqual(cap["start"], -0.001, msg=clip["id"])
                 self.assertLessEqual(cap["end"], dur + 0.05, msg=f"{clip['id']} {cap}")
@@ -96,10 +118,13 @@ class EdlTest(unittest.TestCase):
                 self.assertIn("src_start", cap)
 
     def test_caption_src_matches_output_offset(self) -> None:
+        """Timestamp sumber harus terpetakan ke waktu output lewat segments."""
         for clip in self.edl["clips"]:
-            base = clip["segments"][0]["src_start"]
             for cap in clip["captions"]:
-                self.assertAlmostEqual(cap["start"], cap["src_start"] - base, places=2)
+                expected = edl.map_time(clip["segments"], cap["src_start"])
+                self.assertIsNotNone(expected, msg=f"{clip['id']} {cap}")
+                assert expected is not None
+                self.assertAlmostEqual(cap["start"], expected, places=2, msg=clip["id"])
 
     def test_emphasis_is_single_word_of_text(self) -> None:
         for clip in self.edl["clips"]:

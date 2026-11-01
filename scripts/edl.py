@@ -25,6 +25,91 @@ HOLD_MAX_GAP = 0.55
 HOLD_MARGIN = 0.04
 MAX_CAP_DUR = 2.0   # jangan tahan satu frasa lebih lama dari ini
 
+# Multi-segment: jeda lebih panjang dari ini dibuang dari klip, bukan ditampilkan.
+DEAD_AIR_GAP = 0.45
+MIN_SEG_DUR = 0.6
+
+
+def plan_segments(
+    spans: list[tuple[float, float]],
+    clip_start: float,
+    clip_end: float,
+    max_gap: float = DEAD_AIR_GAP,
+    min_seg: float = MIN_SEG_DUR,
+) -> list[dict[str, Any]]:
+    """Pecah rentang klip jadi segmen-segmen tanpa jeda > max_gap.
+
+    `spans` = rentang bicara dalam waktu SUMBER. Jeda di antaranya dibuang,
+    jadi output lebih padat daripada inputnya.
+    """
+    clean: list[list[float]] = []
+    for s, e in sorted((float(a), float(b)) for a, b in spans):
+        s = max(s, clip_start)
+        e = min(e, clip_end)
+        if e - s <= 1e-6:
+            continue
+        if clean and s - clean[-1][1] <= max_gap:
+            clean[-1][1] = max(clean[-1][1], e)
+        else:
+            clean.append([s, e])
+
+    if not clean:
+        return [
+            {
+                "src_start": round(clip_start, 3),
+                "src_end": round(clip_end, 3),
+                "speed": 1.0,
+                "out_start": 0.0,
+            }
+        ]
+
+    # Segmen yang terlalu pendek dibuang: menampilkan 0,1 detik lebih buruk
+    # daripada melewatinya, dan menggabungkannya akan mengembalikan jeda.
+    kept = [pair for pair in clean if pair[1] - pair[0] >= min_seg] or [clean[0]]
+
+    segments: list[dict[str, Any]] = []
+    out = 0.0
+    for s, e in kept:
+        segments.append(
+            {
+                "src_start": round(s, 3),
+                "src_end": round(e, 3),
+                "speed": 1.0,
+                "out_start": round(out, 3),
+            }
+        )
+        out += e - s
+    return segments
+
+
+def map_time(segments: list[dict[str, Any]], t: float) -> float | None:
+    """Waktu sumber -> waktu output. None kalau jatuh di jeda yang dibuang."""
+    for seg in segments:
+        s = float(seg["src_start"])
+        e = float(seg["src_end"])
+        if s - 1e-6 <= t <= e + 1e-6:
+            return round(float(seg["out_start"]) + (t - s), 3)
+    return None
+
+
+def map_interval(
+    segments: list[dict[str, Any]], start: float, end: float
+) -> tuple[float, float] | None:
+    """Petakan rentang; dipotong di batas segmen, None kalau seluruhnya di jeda."""
+    outs: list[tuple[float, float]] = []
+    for seg in segments:
+        s = float(seg["src_start"])
+        e = float(seg["src_end"])
+        lo = max(start, s)
+        hi = min(end, e)
+        if hi - lo <= 1e-6:
+            continue
+        base = float(seg["out_start"])
+        outs.append((base + (lo - s), base + (hi - s)))
+    if not outs:
+        return None
+    return (round(min(o[0] for o in outs), 3), round(max(o[1] for o in outs), 3))
+
 
 def _smooth_captions(captions: list[dict[str, Any]], clip_dur: float) -> None:
     """Rapikan durasi caption in-place.
@@ -72,10 +157,19 @@ def _clip_from_item(
     clip_words = words[w0 : w1 + 1]
     phrases = cap_mod.group_words(clip_words)
 
+    # Jeda panjang dibuang: klip jadi beberapa segmen, bukan satu rentang utuh.
+    spans = [(float(p["start"]), float(p["end"])) for p in phrases]
+    segments = plan_segments(spans, clip_start, clip_end)
+    out_dur = round(
+        sum(float(s["src_end"]) - float(s["src_start"]) for s in segments), 3
+    )
+
     captions: list[dict[str, Any]] = []
     for ph in phrases:
-        start = round(max(0.0, float(ph["start"]) - clip_start), 3)
-        end = round(min(clip_dur, max(0.0, float(ph["end"]) - clip_start)), 3)
+        mapped = map_interval(segments, float(ph["start"]), float(ph["end"]))
+        if mapped is None:
+            continue  # seluruh frasa jatuh di jeda yang dibuang
+        start, end = mapped
         if end <= start:
             continue
         cap: dict[str, Any] = {
@@ -91,18 +185,19 @@ def _clip_from_item(
             cap["emphasis"] = _clean(str(ph["words"][em_idx]["w"]))
         captions.append(cap)
 
-    _smooth_captions(captions, clip_dur)
+    _smooth_captions(captions, out_dur)
 
     # --- motion graphics tier-1 (tidak mengubah timing) ---
-    boundaries = [
-        round(max(0.0, float(atoms[i]["start"]) - clip_start), 3)
-        for i in range(a0 + 1, a1 + 1)
-    ]
-    punch = motion.punch_schedule(boundaries, clip_dur)
+    boundaries: list[float] = []
+    for i in range(a0 + 1, a1 + 1):
+        mapped_b = map_time(segments, float(atoms[i]["start"]))
+        if mapped_b is not None:
+            boundaries.append(round(mapped_b, 3))
+    punch = motion.punch_schedule(boundaries, out_dur)
 
     overlays: list[dict[str, Any]] = []
     vs = motion.detect_vs(str(item["text"])[:400])
-    if vs and clip_dur >= 6.0:
+    if vs and out_dur >= 6.0:
         overlays.append(
             {
                 "type": "vs",
@@ -124,14 +219,7 @@ def _clip_from_item(
             "weakest_axis": str(item["weakest_axis"]),
             "fix_suggestion": str(item["fix_suggestion"]),
         },
-        "segments": [
-            {
-                "src_start": round(clip_start, 3),
-                "src_end": round(clip_end, 3),
-                "speed": 1.0,
-                "out_start": 0.0,
-            }
-        ],
+        "segments": segments,
         "captions": captions,
         "reframe": {"mode": "center", "bias_x": 0.0, "bias_y": 0.0},
         "punch": punch,

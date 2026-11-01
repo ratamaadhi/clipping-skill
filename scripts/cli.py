@@ -174,8 +174,12 @@ def step_build_edl(args: argparse.Namespace) -> int:
     print(f"✓ EDL  {len(edl['clips'])} klip → {wd / 'edl.json'}")
     print(f"✓ laporan → {report_path}")
     for clip in edl["clips"]:
-        seg = clip["segments"][0]
-        print(f"    {clip['id']}  {seg['src_start']:7.1f}s → {seg['src_end']:7.1f}s  "
+        segs = clip["segments"]
+        total = sum(s["src_end"] - s["src_start"] for s in segs)
+        span = segs[-1]["src_end"] - segs[0]["src_start"]
+        extra = f"  {len(segs)} potongan, buang {span - total:.1f}s" if len(segs) > 1 else ""
+        print(f"    {clip['id']}  {segs[0]['src_start']:7.1f}s → {segs[-1]['src_end']:7.1f}s  "
+              f"output {total:5.1f}s{extra}  "
               f"{len(clip['captions'])} caption  skor {clip['score']['final']}")
     return 0
 

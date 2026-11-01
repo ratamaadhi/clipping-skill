@@ -281,6 +281,7 @@ def analyze_edl(work_dir: str | Path) -> dict[str, Any]:
     dibiarkan apa adanya (reframe tengah).
     """
     from .lib import jsonio
+    from .edl import map_time
 
     wd = Path(work_dir)
     edl = jsonio.read_json(wd / "edl.json")
@@ -300,13 +301,23 @@ def analyze_edl(work_dir: str | Path) -> dict[str, Any]:
         segs = clip.get("segments") or []
         if not segs:
             continue
-        seg = segs[0]
-        samples = sample(src, float(seg["src_start"]), float(seg["src_end"]))
-        timeline = bias_timeline(samples, src_w, crop_w, float(seg["src_start"]))
-        reframe = clip.setdefault("reframe", {})
-        if timeline:
+        first = min(float(s["src_start"]) for s in segs)
+        last = max(float(s["src_end"]) for s in segs)
+        samples = sample(src, first, last)
+        timeline = bias_timeline(samples, src_w, crop_w, first)
+        if not timeline:
+            continue
+        # bias_timeline memakai waktu relatif terhadap awal klip; dengan
+        # multi-segment waktu itu harus dipetakan ke timeline output.
+        mapped: list[list[float]] = []
+        for t_rel, b in timeline:
+            out_t = map_time(segs, first + t_rel)
+            if out_t is not None:
+                mapped.append([out_t, b])
+        if mapped:
+            reframe = clip.setdefault("reframe", {})
             reframe["mode"] = "track"
-            reframe["bias_track"] = [[t, b] for t, b in timeline]
+            reframe["bias_track"] = mapped
             done += 1
 
     jsonio.write_json(wd / "edl.json", edl)

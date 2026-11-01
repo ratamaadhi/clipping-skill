@@ -128,11 +128,20 @@ def render_clip(
     if not src_path.exists():
         raise RenderError(f"sumber tidak ada: {src_path}")
 
-    seg = clip["segments"][0]
-    start = float(seg["src_start"])
-    duration = float(seg["src_end"]) - start
+    segs = clip.get("segments") or []
+    if not segs:
+        raise RenderError(f"{clip['id']}: tidak punya segments")
+    first_start = min(float(s["src_start"]) for s in segs)
+    last_end = max(float(s["src_end"]) for s in segs)
+    duration = sum(float(s["src_end"]) - float(s["src_start"]) for s in segs)
     if duration <= 0:
         raise RenderError(f"{clip['id']}: durasi <= 0")
+
+    # Offset relatif terhadap titik seek (-ss), karena trim menghitung dari situ.
+    rel: list[tuple[float, float]] = [
+        (float(s["src_start"]) - first_start, float(s["src_end"]) - first_start)
+        for s in segs
+    ]
 
     cap_dir = wd / CAP_DIR
     cap_dir.mkdir(parents=True, exist_ok=True)
@@ -156,8 +165,20 @@ def render_clip(
 
     base = _vf_chain(edl, clip, None, None, base_motion, fps)
 
-    parts: list[str] = [f"[0:v]{base}[v0]"]
-    last = "v0"
+    parts: list[str] = []
+    if len(rel) == 1:
+        parts.append(f"[0:v]{base}[vcat]")
+    else:
+        labels: list[str] = []
+        for i, (a, b) in enumerate(rel):
+            parts.append(
+                f"[0:v]trim=start={a:.3f}:end={b:.3f},setpts=PTS-STARTPTS[sv{i}]"
+            )
+            labels.append(f"[sv{i}]")
+        parts.append("".join(labels) + f"concat=n={len(rel)}:v=1:a=0[svcat]")
+        parts.append(f"[svcat]{base}[vcat]")
+
+    last = "vcat"
     if show_progress:
         parts.append(motion.progress_fill_source(duration, fps, TARGET_W))
         parts.append(f"[{last}][bar]{motion.progress_fill_overlay(duration)}[v1]")
@@ -186,7 +207,19 @@ def render_clip(
     target_tp = float(edl["output"].get("true_peak_db", -1.0))
 
     if has_audio:
-        parts.append(f"[0:a]loudnorm=I={target_i:g}:TP={target_tp:g}:LRA=11[a0]")
+        if len(rel) == 1:
+            parts.append(f"[0:a]loudnorm=I={target_i:g}:TP={target_tp:g}:LRA=11[a0]")
+        else:
+            alabels: list[str] = []
+            for i, (a, b) in enumerate(rel):
+                parts.append(
+                    f"[0:a]atrim=start={a:.3f}:end={b:.3f},asetpts=PTS-STARTPTS[sa{i}]"
+                )
+                alabels.append(f"[sa{i}]")
+            parts.append(
+                "".join(alabels) + f"concat=n={len(rel)}:v=0:a=1[acat]"
+            )
+            parts.append(f"[acat]loudnorm=I={target_i:g}:TP={target_tp:g}:LRA=11[a0]")
         if sfx_path:
             parts.append("[1:a]volume=1.0[s1]")
             parts.append(
@@ -202,9 +235,9 @@ def render_clip(
         "-nostats",
         "-y",
         "-ss",
-        f"{start:.3f}",
+        f"{first_start:.3f}",
         "-t",
-        f"{duration:.3f}",
+        f"{last_end - first_start:.3f}",
         "-i",
         str(src_path),
     ]
