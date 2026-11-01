@@ -13,15 +13,65 @@ from typing import Any
 from .lib import text as T
 
 # Parameter tampilan — satu tempat, gampang diubah.
-MAX_WORDS_PER_PHRASE = 3
-MAX_PHRASE_DUR = 1.9
+MAX_WORDS_PER_PHRASE = 4
+MAX_PHRASE_DUR = 2.2
 GAP_BREAK = 0.45
 
 FONT = "DejaVu Sans"
-FONT_SIZE = 84
+FONT_SIZE = 66
 MARGIN_V = 520
 PRIMARY = "&H00FFFFFF"  # putih
 ACCENT = "&H0000E5FF"   # kuning (BGR)
+
+PLAY_W = 1080
+MAX_LINE_FRAC = 0.90   # caption tidak boleh lebih lebar dari 90% frame
+MIN_PHRASE_DUR = 0.75  # di bawah ini mata tidak sempat membaca
+MAX_WORD_DUR = 1.2     # timestamp ASR sering melar; satu kata tidak mungkin 2,6 s
+
+# Kata yang menggantung kalau jadi akhir frasa ("Dengan" sendirian).
+# Jangan berhenti di sini: tarik satu kata berikutnya.
+NO_END_WORDS = frozenset(
+    {
+        "di", "ke", "dari", "dengan", "yang", "dan", "atau", "untuk", "pada",
+        "dalam", "sama", "buat", "kalau", "karena", "sampai", "sampai",
+        "terhadap", "tentang", "seperti", "sebagai", "oleh", "buat",
+    }
+)
+
+
+def _char_width(ch: str) -> float:
+    """Perkiraan lebar karakter dalam em, untuk font sans tebal."""
+    if ch == " ":
+        return 0.28
+    if ch in ".,!?;:'\"()":
+        return 0.30
+    if ch.isdigit():
+        return 0.60
+    if ch.isupper():
+        return 0.70
+    return 0.55
+
+
+def text_width(text: str, size: int = FONT_SIZE) -> float:
+    """Lebar dalam piksel. Caption dirender HURUF BESAR, jadi ukur versi kapital.
+
+    Versi pertama mengukur huruf campur dan hasilnya under-estimate ~30%:
+    teks lolos batas di perhitungan tapi terpotong di frame.
+    """
+    return sum(_char_width(c) for c in text.upper()) * size
+
+
+def fits_line(text: str, size: int = FONT_SIZE) -> bool:
+    return text_width(text, size) <= PLAY_W * MAX_LINE_FRAC
+
+
+def fits_block(text: str, lines: int = 2, size: int = FONT_SIZE) -> bool:
+    """Muat dalam beberapa baris. Dipakai saat menggabung frasa yang terlalu cepat."""
+    return text_width(text, size) <= PLAY_W * MAX_LINE_FRAC * lines * 0.95
+
+
+def _norm(word: str) -> str:
+    return "".join(c for c in str(word).lower() if c.isalpha())
 
 # Kata yang layak diangkat. Sengaja sempit: kalau semua kata ditekankan,
 # tidak ada yang menonjol. Sisa kata hanya diberi bobot panjang sebagai tie-break.
@@ -41,16 +91,29 @@ MIN_EMPHASIS_SCORE = 2.0
 # supaya "ejaan" yang benar-benar berarti ejaan tetap aman.
 ARTIFACT_WORDS = frozenset({"ejaan", "ejaannya"})
 ARTIFACT_GAP = 0.25
+# Kalau artefak diikuti kata sambung, hampir pasti itu tic verbal, bukan kata asli.
+_DISCOURSE_AFTER = frozenset(
+    {"dan", "tapi", "jadi", "terus", "atau", "iya", "oh", "ya", "kan", "lalu",
+     "karena", "kalau", "makanya", "terusnya", "gitu"}
+)
 
 
 def _drop_artifacts(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Buang artefak ASR dan rapikan durasi kata yang melar."""
     out: list[dict[str, Any]] = []
     for i, w in enumerate(words):
         norm = "".join(c for c in str(w["w"]).lower() if c.isalpha())
         if norm in ARTIFACT_WORDS:
             prev_end = float(words[i - 1]["end"]) if i else -99.0
-            if i == 0 or float(w["start"]) - prev_end >= ARTIFACT_GAP:
+            gap = float(w["start"]) - prev_end if i else 99.0
+            nxt = _norm(words[i + 1]["w"]) if i + 1 < len(words) else ""
+            if gap >= ARTIFACT_GAP or not nxt or nxt in _DISCOURSE_AFTER:
                 continue
+        w = dict(w)
+        start = float(w["start"])
+        end = float(w["end"])
+        if end - start > MAX_WORD_DUR:
+            w["end"] = round(start + MAX_WORD_DUR, 3)
         out.append(w)
     return out
 
@@ -61,39 +124,80 @@ def group_words(
     max_dur: float = MAX_PHRASE_DUR,
     gap_break: float = GAP_BREAK,
 ) -> list[dict[str, Any]]:
-    """Kelompokkan kata jadi frasa pendek. Ini yang bikin caption terbaca, bukan dinding teks."""
+    """Kelompokkan kata jadi frasa pendek yang enak dibaca.
+
+    Tiga batas yang dijaga sekaligus:
+      1. lebar  — diperkirakan dalam piksel, bukan jumlah karakter, supaya
+                  kata panjang seperti "Sebenernya" tidak melewati frame
+      2. durasi — frasa di bawah MIN_PHRASE_DUR digabung ke tetangganya
+      3. frasa  — tidak berakhir di kata sambung ("Dengan" sendirian)
+    """
     words = _drop_artifacts(words)
-    phrases: list[dict[str, Any]] = []
+    if not words:
+        return []
+
+    def joined(chunk: list[dict[str, Any]]) -> str:
+        return " ".join(str(w["w"]).strip() for w in chunk)
+
+    def build(chunk: list[dict[str, Any]]) -> dict[str, Any]:
+        return {
+            "words": list(chunk),
+            "start": round(float(chunk[0]["start"]), 3),
+            "end": round(float(chunk[-1]["end"]), 3),
+            "text": joined(chunk),
+        }
+
+    groups: list[list[dict[str, Any]]] = []
     cur: list[dict[str, Any]] = []
 
-    def flush() -> None:
+    for w in words:
         if not cur:
-            return
-        phrases.append(
-            {
-                "words": list(cur),
-                "start": round(float(cur[0]["start"]), 3),
-                "end": round(float(cur[-1]["end"]), 3),
-                "text": " ".join(str(w["w"]).strip() for w in cur),
-            }
-        )
-        cur.clear()
+            cur = [w]
+            continue
+        prev = cur[-1]
+        gap = float(w["start"]) - float(prev["end"])
+        dangling = _norm(prev["w"]) in NO_END_WORDS
+        limit = max_words + (1 if dangling else 0)
 
-    for i, w in enumerate(words):
-        cur.append(w)
-        dur = float(w["end"]) - float(cur[0]["start"])
-        next_gap = (
-            float(words[i + 1]["start"]) - float(w["end"]) if i + 1 < len(words) else 99.0
-        )
-        if (
-            len(cur) >= max_words
-            or dur >= max_dur
-            or next_gap >= gap_break
-            or T.is_sentence_end(str(w["w"]))
-        ):
-            flush()
-    flush()
-    return phrases
+        candidate = cur + [w]
+        too_wide = not fits_line(joined(candidate))
+        too_long = (float(w["end"]) - float(cur[0]["start"])) > max_dur
+
+        if gap >= gap_break or T.is_sentence_end(str(prev["w"])) or too_wide or too_long:
+            groups.append(cur)
+            cur = [w]
+        elif len(cur) >= limit:
+            groups.append(cur)
+            cur = [w]
+        else:
+            cur.append(w)
+    if cur:
+        groups.append(cur)
+
+    # Gabungkan frasa yang terlalu pendek ke tetangganya, boleh sampai dua baris.
+    merged: list[list[dict[str, Any]]] = []
+    for g in groups:
+        if merged:
+            prev = merged[-1]
+            prev_dur = float(prev[-1]["end"]) - float(prev[0]["start"])
+            g_dur = float(g[-1]["end"]) - float(g[0]["start"])
+            gap = float(g[0]["start"]) - float(prev[-1]["end"])
+            sentence = T.is_sentence_end(str(prev[-1]["w"]))
+            combined = prev + g
+            # Jangan gabung melintasi jeda panjang atau batas kalimat: di situ
+            # justru pembaca butuh napas.
+            if (
+                not sentence
+                and gap < gap_break
+                and (prev_dur < MIN_PHRASE_DUR or g_dur < MIN_PHRASE_DUR)
+                and len(combined) <= max_words + 1
+                and fits_block(joined(combined), 2)
+            ):
+                merged[-1] = combined
+                continue
+        merged.append(g)
+
+    return [build(g) for g in merged]
 
 
 def pick_emphasis(phrase: dict[str, Any]) -> int | None:
@@ -209,7 +313,7 @@ _FALLBACK_TEMPLATE = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
-WrapStyle: 2
+WrapStyle: 0
 ScaledBorderAndShadow: yes
 
 [V4+ Styles]

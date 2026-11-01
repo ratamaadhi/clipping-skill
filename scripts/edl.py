@@ -20,9 +20,10 @@ from .lib import jsonio
 
 # Caption yang terlalu singkat tidak terbaca; yang berjeda terlalu jauh terlihat
 # berkedip. Dua ambang ini merapikan ritme tanpa membuat teks menggantung.
-MIN_CAP_DUR = 0.45
+MIN_CAP_DUR = 0.62
 HOLD_MAX_GAP = 0.55
 HOLD_MARGIN = 0.04
+MAX_CAP_DUR = 2.0   # jangan tahan satu frasa lebih lama dari ini
 
 
 def _smooth_captions(captions: list[dict[str, Any]], clip_dur: float) -> None:
@@ -45,6 +46,12 @@ def _smooth_captions(captions: list[dict[str, Any]], clip_dur: float) -> None:
             end = min(start + MIN_CAP_DUR, limit)
         if 0.0 <= limit - end <= HOLD_MAX_GAP:
             end = limit
+        # Timestamp kata dari ASR kadang melar; jangan biarkan satu frasa nangkring.
+        # Tapi jangan sampai memotongnya menciptakan celah kedip ke caption berikutnya.
+        capped = min(end, start + MAX_CAP_DUR)
+        if 0.0 <= limit - capped <= 0.15:
+            capped = limit
+        end = capped
         cap["end"] = round(min(max(end, start + 0.08), clip_dur), 3)
 
 
