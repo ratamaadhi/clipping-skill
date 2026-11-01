@@ -15,6 +15,7 @@ from . import candidates as cand_mod
 from . import captions as cap_mod
 from . import demo as demo_mod
 from . import edl as edl_mod
+from . import faces
 from . import features as feat_mod
 from . import ingest, render, score, segment, transcribe
 from .lib import audio as audio_mod
@@ -143,6 +144,23 @@ def step_score_validate(args: argparse.Namespace) -> int:
         print(f"{s['rank']:>4} {s['id']:>3} {s['final']:>6.1f} {s['percentile']:>5.1f} "
               f"{a['hook']:>5.1f} {a['payoff']:>5.1f} {a['self_contained']:>5.1f} "
               f"{a['emotional']:>5.1f} {a['concrete']:>5.1f} {a['loop']:>5.1f}")
+    return 0
+
+
+def step_faces(args: argparse.Namespace) -> int:
+    wd = _wd(args.work)
+    _need(wd, "edl.json", "build-edl")
+    info = faces.analyze_edl(wd)
+    if info.get("reason"):
+        print(f"! {info['reason']} — crop tetap di tengah")
+        return 0
+    print(f"✓ wajah  {info['clips']}/{info['total']} klip punya jalur crop")
+    for clip in jsonio.read_json(wd / "edl.json")["clips"]:
+        tr = (clip.get("reframe") or {}).get("bias_track") or []
+        if tr:
+            lo = min(b for _, b in tr)
+            hi = max(b for _, b in tr)
+            print(f"    {clip['id']}  {len(tr):2d} titik  bias {lo:+.2f} … {hi:+.2f}")
     return 0
 
 
@@ -314,6 +332,10 @@ def build_parser() -> argparse.ArgumentParser:
     add_common(sp)
     sp.add_argument("--top", type=int, default=5)
     sp.set_defaults(func=step_build_edl)
+
+    sp = sub.add_parser("faces", help="lacak wajah & pembicara → jalur crop")
+    add_common(sp)
+    sp.set_defaults(func=step_faces)
 
     sp = sub.add_parser("render", help="render klip ke mp4")
     add_common(sp)

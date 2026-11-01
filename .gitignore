@@ -13,3 +13,4 @@ venv/
 *.ass
 !templates/*.ass.tmpl
 .DS_Store
+models/

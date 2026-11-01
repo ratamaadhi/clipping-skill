@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from . import captions as cap_mod
+from . import faces
 from . import motion
 from .lib import jsonio
 
@@ -80,7 +81,17 @@ def _vf_chain(
 
     parts: list[str] = []
     if (cw, ch) != (int(src["width"]), int(src["height"])):
-        parts.append(f"crop={cw}:{ch}:{x}:{y}")
+        track = reframe.get("bias_track") or []
+        if track:
+            # crop bergerak mengikuti wajah; x dievaluasi per frame oleh ffmpeg
+            expr = faces.crop_expression(
+                [(float(t), float(b)) for t, b in track],
+                cw,
+                int(src["width"]) - cw,
+            )
+            parts.append(f"crop={cw}:{ch}:x='{expr}':y={y}")
+        else:
+            parts.append(f"crop={cw}:{ch}:{x}:{y}")
     parts.append(f"scale={TARGET_W}:{TARGET_H}:flags=lanczos")
     parts.append("setsar=1")
 
