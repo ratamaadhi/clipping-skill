@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from . import captions as cap_mod
+from . import motion
 from .lib import jsonio
 
 TARGET_W, TARGET_H = 1080, 1920
@@ -61,7 +62,11 @@ def crop_params(
 
 
 def _vf_chain(
-    edl: dict[str, Any], clip: dict[str, Any], ass_rel: str, fontsdir: str | None
+    edl: dict[str, Any],
+    clip: dict[str, Any],
+    ass_rel: str | None = None,
+    fontsdir: str | None = None,
+    motion_filters: list[str] | None = None,
 ) -> str:
     src = edl["source"]
     reframe = clip.get("reframe", {}) or {}
@@ -78,10 +83,14 @@ def _vf_chain(
     parts.append(f"scale={TARGET_W}:{TARGET_H}:flags=lanczos")
     parts.append("setsar=1")
 
-    sub = f"subtitles={ass_rel}"
-    if fontsdir:
-        sub += f":fontsdir={fontsdir}"
-    parts.append(sub)
+    # motion graphics SEBELUM caption, supaya caption selalu di lapisan teratas
+    parts.extend(motion_filters or [])
+
+    if ass_rel:
+        sub = f"subtitles={ass_rel}"
+        if fontsdir:
+            sub += f":fontsdir={fontsdir}"
+        parts.append(sub)
     return ",".join(parts)
 
 
@@ -116,6 +125,59 @@ def render_clip(
     out = Path(out_path).expanduser().resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    fps = float(edl["output"].get("fps", 30.0))
+    show_progress = bool(clip.get("progress", True)) and duration > 0
+
+    # --- motion graphics tier-1 ---
+    zoom = motion.zoompan_filter(clip.get("punch") or [], fps, TARGET_W, TARGET_H)
+    base_motion: list[str] = []
+    if zoom:
+        base_motion.append(zoom)
+    if show_progress:
+        base_motion.append(motion.progress_track_filter())
+
+    base = _vf_chain(edl, clip, None, None, base_motion)
+
+    parts: list[str] = [f"[0:v]{base}[v0]"]
+    last = "v0"
+    if show_progress:
+        parts.append(motion.progress_fill_source(duration, fps, TARGET_W))
+        parts.append(f"[{last}][bar]{motion.progress_fill_overlay(duration)}[v1]")
+        last = "v1"
+    panels = motion.overlay_filters(clip.get("overlays") or [])
+    if panels:
+        parts.append(f"[{last}]" + ",".join(panels) + "[v2]")
+        last = "v2"
+    sub = f"subtitles={ass_rel}" + (f":fontsdir={fontsdir}" if fontsdir else "")
+    parts.append(f"[{last}]{sub}[v]")
+
+    punch = clip.get("punch") or []
+    sfx_events = [
+        {"t": float(p["t"]), "kind": "hit" if i % 2 else "whoosh"}
+        for i, p in enumerate(punch)
+        if i > 0
+    ]
+    sfx_path = (
+        motion.write_sfx_wav(wd / "sfx" / f"{clip['id']}.wav", sfx_events, duration)
+        if sfx_events
+        else None
+    )
+
+    has_audio = bool(edl["source"].get("audio_rate"))
+    target_i = float(edl["output"].get("loudness_lufs", -14.0))
+    target_tp = float(edl["output"].get("true_peak_db", -1.0))
+
+    if has_audio:
+        parts.append(f"[0:a]loudnorm=I={target_i:g}:TP={target_tp:g}:LRA=11[a0]")
+        if sfx_path:
+            parts.append("[1:a]volume=1.0[s1]")
+            parts.append(
+                "[a0][s1]amix=inputs=2:duration=first:normalize=0,"
+                "alimiter=limit=0.95[a]"
+            )
+        else:
+            parts.append("[a0]anull[a]")
+
     cmd: list[str] = [
         "ffmpeg",
         "-hide_banner",
@@ -127,26 +189,14 @@ def render_clip(
         f"{duration:.3f}",
         "-i",
         str(src_path),
-        "-vf",
-        _vf_chain(edl, clip, ass_rel, fontsdir),
     ]
+    if sfx_path:
+        cmd += ["-i", str(sfx_path)]
 
-    has_audio = bool(edl["source"].get("audio_rate"))
+    cmd += ["-filter_complex", ";".join(p for p in parts if p)]
+    cmd += ["-map", "[v]"]
     if has_audio:
-        target_i = float(edl["output"].get("loudness_lufs", -14.0))
-        target_tp = float(edl["output"].get("true_peak_db", -1.0))
-        cmd += [
-            "-af",
-            f"loudnorm=I={target_i:g}:TP={target_tp:g}:LRA=11",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "192k",
-            "-ar",
-            "48000",
-            "-ac",
-            "2",
-        ]
+        cmd += ["-map", "[a]", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2"]
     else:
         cmd += ["-an"]
 

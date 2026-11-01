@@ -41,7 +41,8 @@ video.mp4
    ├─ 5. features    → fitur deterministik (WPM, filler, hook latency, prosodi)
    ├─ 6. score       → ⚠️ AGENT menilai 6 axis, script memvalidasi + menghitung komposit
    ├─ 7. edl         → EDL JSON (artefak pusat, sumber kebenaran render)
-   └─ 8. render      → ffmpeg cut + reframe 9:16 + caption libass
+   └─ 8. render      → ffmpeg: cut + reframe 9:16 + punch-in + progress bar
+                        + SFX + panel VS + caption libass
 ```
 
 Tahap 1–5 dan 7–8 deterministik (input sama → output sama).
@@ -130,7 +131,9 @@ clipping-skill/
 ├── docs/
 │   ├── SCOPE.md              # batas kerja v0 / v1 / out-of-scope
 │   ├── DECISIONS.md          # ADR: alasan keputusan arsitektur
-│   └── PIPELINE.md           # detail tiap tahap + rumus skor
+│   ├── PIPELINE.md           # detail tiap tahap + rumus skor
+│   ├── MOTION.md             # motion graphics tier-1 (punch, SFX, bar, panel)
+│   └── TRANSCRIPTION.md      # riset jalur transkripsi gratis + benchmark
 ├── schema/
 │   ├── transcript.schema.json
 │   ├── selection.schema.json
@@ -145,6 +148,7 @@ clipping-skill/
 │   ├── score.py
 │   ├── edl.py
 │   ├── captions.py
+│   ├── motion.py             # punch-in, progress bar, SFX, panel VS
 │   ├── render.py
 │   └── lib/
 │       ├── text.py           # tokenisasi + marker Bahasa Indonesia
@@ -173,7 +177,8 @@ Tes berjalan **offline** memakai fixture sintetis — tidak butuh video, tidak b
 
 - Reframe masih **center crop**. Face tracking belum ada (butuh `opencv` + `mediapipe`).
 - Satu klip = satu segmen kontinu. Multi-cut per klip sudah ada di schema tapi belum dirender.
-- Motion graphics masih caption kinetic. Template Remotion belum ada.
+- Motion graphics **tier-1** sudah ada (punch-in, progress bar, SFX, panel VS).
+  Template Remotion (tier-2) belum — lihat [`docs/MOTION.md`](docs/MOTION.md).
 - Skor belum terkalibrasi ke data retention nyata (belum ada user).
 - Tidak ada publish API / feedback loop.
 

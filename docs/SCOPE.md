@@ -33,6 +33,9 @@ bukan membangun produk lengkap.
 - [x] `score` — agent menilai 6 axis; script validasi schema + hitung komposit
 - [x] `edl` — EDL JSON sebagai artefak pusat
 - [x] `render` — ffmpeg cut + center crop 9:16 + caption libass kinetic
+- [x] **motion graphics tier-1** — punch-in (zoompan), progress bar, SFX
+      disintesis, panel VS. Semua ffmpeg, tanpa dependency baru.
+      Lihat [`MOTION.md`](MOTION.md).
 
 ### Kualitas
 - [x] Caption sinkron: drift < 50ms pada ≥95% kata
@@ -53,7 +56,9 @@ Hanya dikerjakan **setelah** v0 dipakai pada ≥5 video nyata dan rubriknya terb
       smoothing one-euro. Gate: wajah tidak terpotong di >95% frame.
 - [ ] **Multi-segment clip** — buang filler di tengah, gabung 2–3 potongan.
       Butuh piecewise-linear timestamp mapping (lihat `docs/PIPELINE.md`).
-- [ ] **Template motion graphics Remotion** — kinetic typography, punch-in, VS panel.
+- [ ] **Template motion graphics tier-2 (Remotion)** — spring physics, layout
+      sadar-bbox wajah, animasi per kata, komponen React. Punch-in, progress bar,
+      SFX, dan panel VS sudah selesai di tier-1 dan tinggal dipindahkan.
 - [ ] **Preset per-niche** — podcast, edukasi, tech review, interview.
 - [ ] **Batch mode** — proses banyak video sekaligus dari folder/CSV.
 

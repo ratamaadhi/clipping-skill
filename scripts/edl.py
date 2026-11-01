@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from . import captions as cap_mod
+from . import motion
 from .lib import jsonio
 
 # Caption yang terlalu singkat tidak terbaca; yang berjeda terlalu jauh terlihat
@@ -85,6 +86,26 @@ def _clip_from_item(
 
     _smooth_captions(captions, clip_dur)
 
+    # --- motion graphics tier-1 (tidak mengubah timing) ---
+    boundaries = [
+        round(max(0.0, float(atoms[i]["start"]) - clip_start), 3)
+        for i in range(a0 + 1, a1 + 1)
+    ]
+    punch = motion.punch_schedule(boundaries, clip_dur)
+
+    overlays: list[dict[str, Any]] = []
+    vs = motion.detect_vs(str(item["text"])[:400])
+    if vs and clip_dur >= 6.0:
+        overlays.append(
+            {
+                "type": "vs",
+                "start": 0.6,
+                "end": 3.6,
+                "left": vs[0],
+                "right": vs[1],
+            }
+        )
+
     return {
         "id": f"clip_{int(item['rank']):02d}",
         "score": {
@@ -106,7 +127,9 @@ def _clip_from_item(
         ],
         "captions": captions,
         "reframe": {"mode": "center", "bias_x": 0.0, "bias_y": 0.0},
-        "overlays": [],
+        "punch": punch,
+        "progress": True,
+        "overlays": overlays,
     }
 
 
