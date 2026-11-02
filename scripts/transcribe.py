@@ -100,11 +100,20 @@ def pick_engine(engine: str | None = None) -> str:
 
 
 def _multipart(
-    fields: dict[str, str], files: dict[str, tuple[str, bytes, str]]
+    fields: dict[str, str] | list[tuple[str, str]],
+    files: dict[str, tuple[str, bytes, str]],
 ) -> tuple[bytes, str]:
+    """Bangun body multipart.
+
+    `fields` boleh dict (satu nilai per kunci, perilaku lama) atau daftar
+    pasangan agar kunci yang sah diulang — misalnya
+    `timestamp_granularities[]`. Urutan pasangan dipertahankan, dan bentuk dict
+    menghasilkan byte yang sama persis seperti sebelumnya.
+    """
     boundary = "----clipping" + uuid.uuid4().hex
     body = bytearray()
-    for name, value in fields.items():
+    items = fields.items() if isinstance(fields, dict) else fields
+    for name, value in items:
         body += f"--{boundary}\r\n".encode()
         body += f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode()
         body += f"{value}\r\n".encode()
@@ -307,16 +316,24 @@ def _estimate_from_segments(segments: list[dict[str, Any]]) -> list[dict[str, An
 def _openai_compatible(
     audio: Path, key: str, url: str, model: str, language: str | None
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    fields = {
-        "model": model,
-        "response_format": "verbose_json",
-        "timestamp_granularities[]": "word",
-        "temperature": "0",
-    }
+    """Transkripsi lewat endpoint OpenAI-compatible (Groq/OpenAI).
+
+    Meminta granularitas `word` DAN `segment` sekaligus: tanpa `segment`, Groq
+    membalas `segments: []` dan `_bad_ranges()` tidak pernah aktif. Bila respons
+    tetap tidak memuat `segments` (engine lain/format lama), tidak ada kata yang
+    dibuang dan tidak ada galat.
+    """
+    fields: list[tuple[str, str]] = [
+        ("model", model),
+        ("response_format", "verbose_json"),
+        ("timestamp_granularities[]", "word"),
+        ("timestamp_granularities[]", "segment"),
+        ("temperature", "0"),
+    ]
     if language:
-        fields["language"] = language
+        fields.append(("language", language))
     if language in (None, "id"):
-        fields["prompt"] = GLOSSARY_ID
+        fields.append(("prompt", GLOSSARY_ID))
 
     body, ctype = _multipart(
         fields, {"file": (audio.name, audio.read_bytes(), "audio/mpeg")}
