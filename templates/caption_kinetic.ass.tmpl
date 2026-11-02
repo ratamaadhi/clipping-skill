@@ -1,0 +1,29 @@
+[Script Info]
+; Template caption kinetic (tier-2): satu Dialogue per kata, posisi dari Python.
+; Placeholder yang disubstitusi: FONT, FONTSIZE, OUTLINE, SHADOW, PRIMARY,
+; ACCENT, dan blok EVENTS.
+; Catatan: jangan menulis nama placeholder berkurung di komentar — substitusi
+; bersifat global dan akan menggandakan event.
+;
+; WrapStyle: 2 = tanpa pembungkus otomatis. Kita yang menempatkan tiap kata
+; lewat \an5\pos(x,y) hasil layout_phrase, jadi libass tidak boleh membungkus
+; ulang teks: pembungkusan kedua akan menggeser kata dari koordinat yang sudah
+; dihitung dari metrik font.
+;
+; Bold: 0 karena berkas font bundel sudah sangat tebal secara desain. Bold: -1
+; akan menambah stroke sintetik di atas bobot itu dan merusak ketajaman huruf.
+; Lihat assets/fonts/SOURCES.md.
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.709
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Kinetic,{{FONT}},{{FONTSIZE}},{{PRIMARY}},&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,{{OUTLINE}},{{SHADOW}},5,0,0,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+{{EVENTS}}
