@@ -73,3 +73,28 @@ class CropExpressionTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FaceTopMarginTest(unittest.TestCase):
+    def _s(self, cy: float, h: float, w: float = 0.2) -> dict:
+        return {"t": 0.0, "cut": False, "faces": [{"cx": 0.5, "cy": cy, "w": w, "h": h}]}
+
+    def test_margin_is_distance_to_top_of_head(self) -> None:
+        self.assertAlmostEqual(faces.face_top_margin([self._s(0.5, 0.4)]), 0.3, places=3)
+
+    def test_median_is_used(self) -> None:
+        samples = [self._s(0.2, 0.2), self._s(0.5, 0.4), self._s(0.9, 0.2)]
+        # margin: 0.1, 0.3, 0.8 -> median 0.3
+        self.assertAlmostEqual(faces.face_top_margin(samples), 0.3, places=3)
+
+    def test_no_face_returns_none(self) -> None:
+        self.assertIsNone(faces.face_top_margin([{"faces": []}]))
+
+    def test_largest_face_wins(self) -> None:
+        s = {"faces": [
+            {"cx": 0.2, "cy": 0.9, "w": 0.05, "h": 0.05},
+            {"cx": 0.5, "cy": 0.5, "w": 0.30, "h": 0.30},
+        ]}
+        self.assertAlmostEqual(faces.face_top_margin([s]), 0.35, places=3)
+
+

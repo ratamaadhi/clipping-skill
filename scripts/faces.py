@@ -52,12 +52,19 @@ def _detector(w: int, h: int) -> Any:
     return cv2.FaceDetectorYN_create(str(MODEL), "", (w, h), 0.6, 0.3, 5000)
 
 
-def _extract_frames(video: Path, start: float, end: float, out_dir: Path) -> list[Path]:
+def _extract_frames(
+    video: Path,
+    start: float,
+    end: float,
+    out_dir: Path,
+    size: tuple[int, int] | None = None,
+) -> list[Path]:
+    sw, sh = size or (SAMPLE_W, SAMPLE_H)
     dur = max(0.1, end - start)
     cmd = [
         "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
         "-ss", f"{start:.3f}", "-t", f"{dur:.3f}", "-i", str(video),
-        "-vf", f"fps={SAMPLE_FPS:g},scale={SAMPLE_W}:{SAMPLE_H}",
+        "-vf", f"fps={SAMPLE_FPS:g},scale={sw}:{sh}",
         "-q:v", "3", str(out_dir / "f_%04d.jpg"),
     ]
     subprocess.run(cmd, check=True, capture_output=True)
@@ -80,8 +87,17 @@ def _mouth_patch(frame: Any, box: tuple[float, float, float, float]) -> Any:
     return cv2.resize(patch, MOUTH_SIZE)
 
 
-def sample(video: str | Path, start: float, end: float) -> list[dict[str, Any]]:
-    """Ambil sampel wajah + skor gerak mulut sepanjang [start, end]."""
+def sample(
+    video: str | Path,
+    start: float,
+    end: float,
+    size: tuple[int, int] | None = None,
+) -> list[dict[str, Any]]:
+    """Ambil sampel wajah + skor gerak mulut sepanjang [start, end].
+
+    `size` harus mengikuti aspek video: frame 9:16 yang dipaksa ke 640x360
+    terjepit 3,2x vertikal dan deteksi wajahnya jadi tidak bisa dipercaya.
+    """
     import cv2
     import numpy as np
 
@@ -89,10 +105,11 @@ def sample(video: str | Path, start: float, end: float) -> list[dict[str, Any]]:
         return []
 
     video = Path(video)
-    det = _detector(SAMPLE_W, SAMPLE_H)
+    sw, sh = size or (SAMPLE_W, SAMPLE_H)
+    det = _detector(sw, sh)
 
     with tempfile.TemporaryDirectory() as td:
-        frames = _extract_frames(video, start, end, Path(td))
+        frames = _extract_frames(video, start, end, Path(td), size=(sw, sh))
         if not frames:
             return []
 
@@ -123,14 +140,15 @@ def sample(video: str | Path, start: float, end: float) -> list[dict[str, Any]]:
                     score = float(f[14])
                     if score < 0.6 or w < 20:
                         continue
-                    cx = (x + w / 2.0) / SAMPLE_W
-                    cy = (y + h / 2.0) / SAMPLE_H
+                    cx = (x + w / 2.0) / sw
+                    cy = (y + h / 2.0) / sh
                     patch = _mouth_patch(img, (x, y, w, h))
                     row.append(
                         {
                             "cx": round(cx, 4),
                             "cy": round(cy, 4),
-                            "w": round(w / SAMPLE_W, 4),
+                            "w": round(w / sw, 4),
+                            "h": round(h / sh, 4),
                             "patch": patch,
                             "motion": 0.0,
                         }
@@ -264,6 +282,28 @@ def bias_timeline(
     return timeline
 
 
+def face_top_margin(samples: list[dict[str, Any]]) -> float | None:
+    """Jarak dari tepi atas frame ke ubun-ubun, sebagai fraksi tinggi frame.
+
+    Dipakai untuk membatasi punch-in: zoom memotong (1 - 1/s)/2 dari tinggi
+    frame di sisi atas, jadi kalau margin lebih kecil dari itu, kepala terpotong.
+    """
+    tops: list[float] = []
+    for s in samples:
+        faces = s.get("faces") or []
+        if not faces:
+            continue
+        # wajah terbesar = subjek utama
+        f = max(faces, key=lambda x: x.get("w", 0.0))
+        h = float(f.get("h") or f.get("w", 0.0))
+        cy = float(f.get("cy", 0.5))
+        tops.append(cy - h / 2.0)
+    if not tops:
+        return None
+    tops.sort()
+    return round(tops[len(tops) // 2], 4)
+
+
 def _compress(timeline: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Buang titik yang biasnya sama dengan sebelumnya."""
     out: list[tuple[float, float]] = []
@@ -304,6 +344,29 @@ def analyze_edl(work_dir: str | Path) -> dict[str, Any]:
         first = min(float(s["src_start"]) for s in segs)
         last = max(float(s["src_end"]) for s in segs)
         samples = sample(src, first, last)
+
+        # Margin headroom per sampel, dipetakan ke waktu output. Punch dibatasi
+        # per event, bukan per klip: satu klip bisa memuat shot lebar dan
+        # close-up sekaligus, dan rata-ratanya menyembunyikan close-up.
+        timed: list[tuple[float, float]] = []
+        for s in samples:
+            fs = s.get("faces") or []
+            if not fs:
+                continue
+            f = max(fs, key=lambda x: x.get("w", 0.0))
+            hh = float(f.get("h") or f.get("w", 0.0))
+            m = float(f.get("cy", 0.5)) - hh / 2.0
+            out_t = map_time(segs, float(s["t"]))
+            if out_t is not None:
+                timed.append((out_t, round(m, 4)))
+        if timed:
+            # Disimpan sebagai diagnostik saja. Pembatasan punch berdasarkan
+            # margin ini sempat dicoba dan dicabut: A/B pada klip close-up
+            # menghasilkan 39 vs 40 frame terpotong, jadi tidak ada manfaatnya.
+            clip.setdefault("reframe", {})["face_top"] = round(
+                sorted(m for _, m in timed)[len(timed) // 2], 4
+            )
+
         timeline = bias_timeline(samples, src_w, crop_w, first)
         if not timeline:
             continue
