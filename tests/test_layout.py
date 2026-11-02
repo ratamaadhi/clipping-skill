@@ -782,5 +782,87 @@ class SummaryScenarioTest(unittest.TestCase):
         self.assertEqual(audit["caption_face_frames"], 0)
 
 
+class ScanFreeRectTest(unittest.TestCase):
+    """Pengujian layout.scan_free_rect (penempatan tanpa penyusutan)."""
+
+    def test_scan_free_rect_basic_and_exact_size(self) -> None:
+        size = (960.0, 328.0)
+        got = layout.scan_free_rect(size, [], [], [])
+        self.assertIsNotNone(got)
+        assert got is not None
+        self.assertEqual((got.x, got.y, got.w, got.h), (60.0, 250.0, 960.0, 328.0))
+
+    def test_scan_free_rect_never_shrinks(self) -> None:
+        # Mutan (b): scan_free_rect tidak boleh menyusutkan w atau h
+        size = (960.0, 520.0)
+        zones = [layout.Rect(0.0, 200.0, 1080.0, 300.0)]
+        got = layout.scan_free_rect(size, zones, [], [])
+        self.assertIsNotNone(got)
+        assert got is not None
+        self.assertEqual(got.w, 960.0)
+        self.assertEqual(got.h, 520.0)
+
+    def test_scan_free_rect_avoids_face_zones(self) -> None:
+        # Mutan (c): zona wajah harus dihindari
+        size = (960.0, 300.0)
+        face_zone = layout.Rect(0.0, 200.0, 1080.0, 400.0)  # y: 200..600
+        got = layout.scan_free_rect(size, [face_zone], [], [])
+        self.assertIsNotNone(got)
+        assert got is not None
+        self.assertFalse(got.intersects(face_zone))
+        self.assertGreaterEqual(got.y, 600.0)
+
+    def test_scan_free_rect_respects_safe_bottom(self) -> None:
+        # Mutan (d): tidak boleh melewati y_max = 1920 - SAFE.bottom - h = 1440 - h
+        size = (960.0, 300.0)
+        # Hambatan menutup kanvas sampai y=1200
+        # Di y=1200, y+h = 1500 > 1440 -> tidak muat di zona aman bawah!
+        zones = [layout.Rect(0.0, 0.0, 1080.0, 1200.0)]
+        got = layout.scan_free_rect(size, zones, [], [])
+        self.assertIsNone(got, "Harus None karena melebihi zona aman bawah")
+
+    def test_scan_free_rect_avoid_caption_and_fallback(self) -> None:
+        # Mutan (e): avoid_caption diuji
+        size = (960.0, 200.0)
+        # Caption di y=250..400
+        caption = layout.Rect(100.0, 250.0, 800.0, 150.0)
+        # Bila avoid_caption=True: lewati caption, pilih posisi di bawah caption (y >= 400)
+        got_avoid = layout.scan_free_rect(size, [], [caption], [], avoid_caption=True)
+        self.assertIsNotNone(got_avoid)
+        assert got_avoid is not None
+        self.assertFalse(got_avoid.intersects(caption))
+        self.assertGreaterEqual(got_avoid.y, 400.0)
+
+        # Bila caption menutup SEMUA posisi aman, tapi bebas wajah: fallback kembalikan posisi pertama
+        full_caption = layout.Rect(0.0, 250.0, 1080.0, 1200.0)
+        got_fallback = layout.scan_free_rect(size, [], [full_caption], [], avoid_caption=True)
+        self.assertIsNotNone(got_fallback, "Harus fallback ke posisi bebas wajah saat caption menutupi semua")
+        assert got_fallback is not None
+        self.assertEqual(got_fallback.y, 250.0)
+
+        # Bila avoid_caption=False: langsung ambil posisi pertama
+        got_no_avoid = layout.scan_free_rect(size, [], [caption], [], avoid_caption=False)
+        self.assertIsNotNone(got_no_avoid)
+        assert got_no_avoid is not None
+        self.assertEqual(got_no_avoid.y, 250.0)
+
+    def test_scan_free_rect_real_video_case(self) -> None:
+        # Kasus nyata: wajah (113, 341, 641, 547) dengan punch 1.0-1.2
+        face = layout.Rect(113.0, 341.0, 641.0, 547.0)
+        zones = layout.forbidden_zones([face], max_scale=1.2)
+        card_size = (960.0, 328.0)
+        got = layout.scan_free_rect(card_size, zones, x=60.0, step=20.0)
+        self.assertIsNotNone(got)
+        assert got is not None
+        self.assertEqual(got.x, 60.0)
+        self.assertEqual(got.w, 960.0)
+        self.assertEqual(got.h, 328.0)
+        # Zona wajah berakhir di ~899.85, sehingga pada step=20 jatuh di y >= 900
+        self.assertGreaterEqual(got.y, 900.0)
+        self.assertLessEqual(got.y, 960.0)
+        for z in zones:
+            self.assertFalse(got.intersects(z))
+
+
 if __name__ == "__main__":
     unittest.main()

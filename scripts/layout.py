@@ -49,6 +49,7 @@ __all__ = [
     "place_caption",
     "place_overlay",
     "punch_scale_at",
+    "scan_free_rect",
     "shots",
 ]
 
@@ -634,6 +635,94 @@ def place_overlay(
         slots=slots, order=order,
     )
     return fitted
+
+
+def scan_free_rect(
+    size: tuple[float, float] | list[float],
+    zones: Any,
+    caption_rects: Any = (),
+    taken: Any = (),
+    *,
+    x: float = 60.0,
+    y_min: float | None = None,
+    y_max: float | None = None,
+    step: float = 20.0,
+    avoid_caption: bool = True,
+) -> Rect | None:
+    """Pindai posisi vertikal dari atas ke bawah untuk kotak ukuran penuh.
+
+    Mengembalikan kotak UKURAN PENUH pertama (w, h persis `size`) yang:
+    - Tidak memotong zona terlarang wajah (`zones`),
+    - Tidak memotong overlay lain (`taken`),
+    - Berada di dalam kanvas dan zona aman vertikal (`SAFE`; batas bawah
+      `y_max = 1920 - SAFE["bottom"] - h`),
+    - Bila `avoid_caption=True`, tidak memotong kotak caption (`caption_rects`).
+      Bila tak ada posisi yang tidak memotong caption tetapi ada yang tidak
+      memotong wajah, kembalikan posisi tersebut sebagai fallback (pemanggil
+      memberikan peringatan).
+
+    Deterministik, tanpa menyusutkan ukuran kartu.
+    """
+    if not isinstance(size, (list, tuple)) or len(size) != 2:
+        raise LayoutError("size harus (w, h)")
+    w = _positive(size[0], "size[0]")
+    h = _positive(size[1], "size[1]")
+    x_val = _num(x, "x")
+    step_val = _positive(step, "step")
+
+    if x_val < 0.0 or x_val + w > CANVAS[0]:
+        return None
+
+    if y_min is None:
+        y_min_val = float(SAFE["top"])
+    else:
+        y_min_val = _num(y_min, "y_min")
+
+    if y_max is None:
+        y_max_val = float(CANVAS[1] - SAFE["bottom"] - h)
+    else:
+        y_max_val = _num(y_max, "y_max")
+
+    if y_max_val < y_min_val:
+        return None
+
+    face_zones = _rects(zones, "zones")
+    cap_rects = _rects(caption_rects, "caption_rects")
+    taken_rects = _rects(taken, "taken")
+
+    fallback_candidate: Rect | None = None
+
+    y = y_min_val
+    while y <= y_max_val + 1e-6:
+        candidate = Rect(x_val, y, w, h)
+
+        # Cek batas kanvas vertikal
+        if candidate.y < 0.0 or candidate.y + candidate.h > CANVAS[1]:
+            y += step_val
+            continue
+
+        # Cek zona terlarang wajah
+        if any(candidate.intersects(z) for z in face_zones):
+            y += step_val
+            continue
+
+        # Cek overlap dengan overlay lain yang sudah diambil (taken)
+        if any(candidate.intersects(t) for t in taken_rects):
+            y += step_val
+            continue
+
+        # Posisi ini aman dari wajah dan taken
+        if avoid_caption:
+            if any(candidate.intersects(c) for c in cap_rects):
+                if fallback_candidate is None:
+                    fallback_candidate = candidate
+                y += step_val
+                continue
+            return candidate
+        else:
+            return candidate
+
+    return fallback_candidate
 
 
 # ---------------------------------------------------------------------------
