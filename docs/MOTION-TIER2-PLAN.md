@@ -1121,6 +1121,42 @@ identik byte-per-byte dengan awal]). Instruksi agen ditulis di `SKILL.md` Langka
 Catatan teknis: aturan 10 membungkus perhitungan irisan dengan `except Exception: pass` (galat diam-diam menghilangkan
 peringatan; layak dipersempit).
 
+**Uji pada video pengguna (2026-11-03): "Nasib Youtube Saya di Tangan Mereka", 41:38, podcast beberapa pembicara.**
+Alur skill penuh dijalankan di `work/rd_nasib/` (gitignored): `run` (718 atom → 15 kandidat), penilaian agen 15 kandidat
+(`score-validate` lolos), `build-edl --motion 2 --top 3` (klip 27,7 / 34,7 / 50,6 s), `faces --face-track`,
+`fx-candidates`, rencana efek, `fx-validate`, `fx-preview`, persetujuan pengguna, `fx-apply --approve`, `render` final
+(27 s untuk tiga klip; 831/1041/1518 frame = durasi × 30, `scripts.verify` 0 bermasalah). Pengguna membuang `checklist` dan
+meminta transisi `zoom_through_text` "5.000 view" diperlambat (0,7 → 1,2 s via `props.duration`); dua overlay diterapkan.
+**Tiga temuan pada data nyata (DIPERBAIKI di Langkah 7e dan 7f, lihat di bawah):**
+1. **Pengesah menyuntikkan `rect` yang menyusut** untuk kartu tanpa `rect` eksplisit (`layout.place_overlay` mengecilkan
+   ukuran bawaan ke slot 240–300 px; tinggi `checklist` 3 butir = 328 px) sehingga `fx-validate` MENERIMA tetapi
+   `fx-preview` gagal ("kartu tidak boleh disusutkan"). Perbaikan: jangan menyuntikkan `rect` menyusut; tolak bila tak ada
+   slot yang memuat ukuran penuh, atau biarkan preset memakai posisi bawaannya setelah dicek terhadap zona wajah.
+2. **Pemicu `product` salah deteksi** pada kapitalisasi hasil ASR ("Deal.", "Oke.", "Tidak", "Vue-nya"); semua momen
+   `product` pada tiga klip ini palsu. Perbaikan: wajibkan leksikon aplikasi/produk atau kapital di tengah kalimat yang
+   berulang DAN bukan awal kalimat hasil ASR.
+3. **Pemicu `list` salah satu kali** pada potongan kacau "Tidak ke pertama".
+**Status Langkah 7e/7f (perbaikan tiga temuan; diverifikasi independen).**
+- **7e:** `fxcatalog.required_size(type, props)` menurunkan ukuran kartu dari geometri preset asli (bukan angka statis);
+  `layout.scan_free_rect` menempatkan kartu berukuran PENUH tanpa menyusutkan (menghindari zona wajah, zona aman, caption, dan
+  overlay lain); `fxplan.validate` menjalankan ulang pembuat preset pada overlay final sehingga item `accepted` dijamin lolos
+  `fx-preview` (invarian diuji: sapuan 81 item nyata, 0 pelanggaran). Pemicu `product` hanya dari leksikon aplikasi, kata kerja
+  layar + objek, atau kapital berulang non-awal-kalimat di luar daftar henti dan gelar orang; pemicu `list` butuh penanda
+  urutan berbeda dan naik atau isyarat jumlah.
+- **7f (cacat sisa dari verifikasi 7e):** `phone_frame` tanpa `rect` kini menghormati `side` (x=640 kanan/bawaan, x=60 kiri;
+  di pengesah dan `fits`); kata kerja layar persis daftar spesifikasi (`cari` hanya sebagai `cari di`; `pasang`/`tekan`
+  dihapus); objek kata kerja layar berhenti di batas kalimat; 9 tes baru menutup celah yang dibuktikan mutan koordinator.
+- **Hasil:** 1453 tes (hanya 4 kegagalan `test_procmem` lama, butuh /proc Linux); tier-1 byte-identik dengan HEAD; momen `product`
+  dan `list` palsu pada tiga klip pengguna dan tujuh klip kandidat lain: 0; momen `number` tetap.
+- **Batas yang diketahui (belum ditangani):** (1) nama tempat/orang yang diucapkan berulang di tengah kalimat ("Jakarta")
+  tetap lolos aturan kapital berulang dan menjadi `product` lemah (`evidence.source = repeated_capital`; agen wajib menimbang
+  dan mengabaikannya bila bukan produk); (2) tes belum mengunci bahwa kata sebelum "di" selain `cari` bukan kata kerja layar
+  (kode benar, hanya celah tes); (3) tinggi `phone_frame` 3 baris (660 px) hampir tak pernah muat pada bidikan sedang/lebar
+  nyata, sehingga biasanya ditolak dengan alasan jelas (agen dapat memberi `rect` eksplisit).
+
+Catatan kualitas: Groq menghasilkan transkrip kacau pada bagian obrolan tumpang tindih ("Yono Bakri", "Bihangkudman");
+klip dipilih dari bagian yang relatif bersih, tetapi ejaan caption tetap perlu diperiksa pengguna.
+
 ### Langkah 6 — Overlay Remotion sparse (**bersyarat** vonis Langkah 1 ≠ `NO_GO`; vonis aktual: `NO_GO`, dibekukan)
 
 **File:** buat `remotion/` (`package.json` dengan versi dipin, `src/Root.tsx`,
