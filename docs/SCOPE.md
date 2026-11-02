@@ -59,6 +59,9 @@ Hanya dikerjakan **setelah** v0 dipakai pada ≥5 video nyata dan rubriknya terb
 - [ ] **Template motion graphics tier-2 (Remotion)** — spring physics, layout
       sadar-bbox wajah, animasi per kata, komponen React. Punch-in, progress bar,
       SFX, dan panel VS sudah selesai di tier-1 dan tinggal dipindahkan.
+- [ ] ~~**Person matte**~~ — **dibekukan** (D-012): spike Langkah 1b gagal kualitas pada dua
+      putaran (flicker vs kelambanan mask). Teks/objek di belakang pembicara, outline siluet,
+      dan latar pengganti tidak dikejar; 7 dari 17 efek referensi tetap lewat Langkah 2–5b.
 - [ ] **Preset per-niche** — podcast, edukasi, tech review, interview.
 - [ ] **Batch mode** — proses banyak video sekaligus dari folder/CSV.
 
