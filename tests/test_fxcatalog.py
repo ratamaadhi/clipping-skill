@@ -186,6 +186,127 @@ class FxCatalogExampleValidationTest(unittest.TestCase):
                 )
 
 
+class FxCatalogRequiredSizeTest(unittest.TestCase):
+    """Pengujian fxcatalog.required_size terhadap pembuat preset asli."""
+
+    def test_zoom_through_text_and_pullback_return_none(self) -> None:
+        self.assertIsNone(fxcatalog.required_size("zoom_through_text", {"text": "Halo"}))
+        self.assertIsNone(fxcatalog.required_size("pullback", {}))
+        self.assertIsNone(fxcatalog.required_size("unknown_effect", {}))
+
+    def test_checklist_required_size_dynamic_and_matches_preset_builder(self) -> None:
+        # Variasi jumlah butir sah: 2, 3, 4, 5
+        for n in (2, 3, 4, 5):
+            props = {
+                "title": f"Daftar {n}",
+                "items": [{"text": f"Item {i+1}", "done_at": float(i+1)} for i in range(n)],
+            }
+            size = fxcatalog.required_size("checklist", props)
+            self.assertIsNotNone(size)
+            w, h = size
+            self.assertEqual(w, presets.CARD_W)
+            expected_h = 2.0 * presets.CARD_PAD_Y + presets.CARD_HEADER_H + n * presets.CARD_ROW_H
+            self.assertEqual(h, expected_h)
+
+            # Ukuran tepat -> lolos pembuat preset
+            rect_exact = {"x": 60.0, "y": 260.0, "w": w, "h": h}
+            item = {"type": "checklist", "start": 0.0, "end": 10.0, "props": props, "rect": rect_exact}
+            plan, warns = presets.REGISTRY["checklist"](0, item, 20.0, fps=30.0)
+            self.assertIsNotNone(plan)
+
+            # 1 px lebih pendek -> ditolak pembuat preset
+            rect_short = {"x": 60.0, "y": 260.0, "w": w, "h": h - 1.0}
+            item_short = {"type": "checklist", "start": 0.0, "end": 10.0, "props": props, "rect": rect_short}
+            with self.assertRaises(presets.PresetError) as ctx:
+                presets.REGISTRY["checklist"](0, item_short, 20.0, fps=30.0)
+            self.assertIn("tidak boleh disusutkan", str(ctx.exception))
+
+    def test_checklist_not_fixed_3_items(self) -> None:
+        # Bukti mutan (a): harus berbeda untuk n=2 vs n=3
+        s2 = fxcatalog.required_size("checklist", {"items": [{"text": "A"}, {"text": "B"}]})
+        s3 = fxcatalog.required_size("checklist", {"items": [{"text": "A"}, {"text": "B"}, {"text": "C"}]})
+        self.assertNotEqual(s2, s3)
+        self.assertLess(s2[1], s3[1])
+
+    def test_phone_frame_required_size_dynamic_and_matches_preset_builder(self) -> None:
+        for n in (2, 3, 4):
+            props = {
+                "title": f"Ponsel {n}",
+                "lines": [f"Baris {i+1}" for i in range(n)],
+            }
+            size = fxcatalog.required_size("phone_frame", props)
+            self.assertIsNotNone(size)
+            w, h = size
+            self.assertEqual(w, presets_phone.PHONE_DEFAULT_W)
+            expected_h = presets_phone.PHONE_BASE_H + n * presets_phone.PHONE_LINE_ROW_H
+            self.assertEqual(h, expected_h)
+
+            # Ukuran tepat -> lolos pembuat preset
+            rect_exact = {"x": 60.0, "y": 250.0, "w": w, "h": h}
+            item = {"type": "phone_frame", "start": 0.0, "end": 10.0, "props": props, "rect": rect_exact}
+            plan, warns = presets_phone.build(0, item, 20.0, fps=30.0)
+            self.assertIsNotNone(plan)
+
+            # 1 px lebih pendek -> ditolak pembuat preset
+            rect_short = {"x": 60.0, "y": 250.0, "w": w, "h": h - 1.0}
+            item_short = {"type": "phone_frame", "start": 0.0, "end": 10.0, "props": props, "rect": rect_short}
+            with self.assertRaises(presets.PresetError) as ctx:
+                presets_phone.build(0, item_short, 20.0, fps=30.0)
+            self.assertIn("tidak boleh disusutkan", str(ctx.exception))
+
+    def test_ui_panel_required_size_matches_preset_builder(self) -> None:
+        for thumbs in (1, 3, 4, 6):
+            props = {
+                "title": "Panel UI",
+                "tag": "INFO",
+                "thumbs": thumbs,
+                "input": "Cari data",
+            }
+            size = fxcatalog.required_size("ui_panel", props)
+            self.assertIsNotNone(size)
+            w, h = size
+            self.assertEqual(w, presets.UI_CARD_W)
+            expected_h = presets._ui_required_height(thumbs)
+            self.assertEqual(h, expected_h)
+
+            rect_exact = {"x": 60.0, "y": 260.0, "w": w, "h": h}
+            item = {"type": "ui_panel", "start": 0.0, "end": 10.0, "props": props, "rect": rect_exact}
+            plan, warns = presets.REGISTRY["ui_panel"](0, item, 20.0, fps=30.0)
+            self.assertIsNotNone(plan)
+
+            rect_short = {"x": 60.0, "y": 260.0, "w": w, "h": h - 1.0}
+            item_short = {"type": "ui_panel", "start": 0.0, "end": 10.0, "props": props, "rect": rect_short}
+            with self.assertRaises(presets.PresetError) as ctx:
+                presets.REGISTRY["ui_panel"](0, item_short, 20.0, fps=30.0)
+            self.assertIn("tidak boleh disusutkan", str(ctx.exception))
+
+    def test_chart_grow_required_size_matches_preset_builder(self) -> None:
+        props = {
+            "title": "Grafik",
+            "labels": ["Jan", "Feb", "Mar"],
+            "values": [10.0, 20.0, 30.0],
+            "tag": "+200%",
+        }
+        size = fxcatalog.required_size("chart_grow", props)
+        self.assertIsNotNone(size)
+        w, h = size
+        self.assertEqual(w, presets.CHART_CARD_W)
+        self.assertEqual(h, presets.CHART_CARD_H)
+
+        rect_exact = {"x": 60.0, "y": 260.0, "w": w, "h": h}
+        item = {"type": "chart_grow", "start": 0.0, "end": 10.0, "props": props, "rect": rect_exact}
+        plan, warns = presets.REGISTRY["chart_grow"](0, item, 20.0, fps=30.0)
+        self.assertIsNotNone(plan)
+
+        # Tinggi lebih pendek dari required_height grafik -> ditolak
+        req_h = presets._chart_required_height(True)
+        rect_short = {"x": 60.0, "y": 260.0, "w": w, "h": req_h - 1.0}
+        item_short = {"type": "chart_grow", "start": 0.0, "end": 10.0, "props": props, "rect": rect_short}
+        with self.assertRaises(presets.PresetError) as ctx:
+            presets.REGISTRY["chart_grow"](0, item_short, 20.0, fps=30.0)
+        self.assertIn("tidak boleh disusutkan", str(ctx.exception))
+
+
 class FxCatalogMarkdownTest(unittest.TestCase):
     """Pengujian keluaran markdown katalog."""
 

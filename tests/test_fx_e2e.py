@@ -241,6 +241,134 @@ class TestFxSuggestE2E(unittest.TestCase):
         for k, v in durations.items():
             print(f"E2E Timing [{k}]: {v:.3f}s")
 
+    def test_medium_shot_cards_without_rect_validate_and_preview(self) -> None:
+        """Uji e2e: EDL shot sedang dengan kartu tanpa rect untuk tiap jenis kartu."""
+        # Buat sumber video 12 detik agar cukup untuk durasi klip 10 detik
+        subprocess.run([
+            _FFMPEG, "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "lavfi", "-i", "color=c=black:s=1920x1080:r=30:d=12",
+            "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:duration=12",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "128k", "-shortest", str(self.src_path),
+        ], check=True)
+
+        # 4 klip, masing-masing memuat shot sedang dengan wajah di bawah kanvas (y=1400, h=300)
+        clips = []
+        for i in range(1, 5):
+            clips.append({
+                "id": f"clip_{i:02d}",
+                "segments": [{"src_start": 0.0, "src_end": 10.0, "speed": 1.0}],
+                "caption_style": "kinetic",
+                "reframe": {
+                    "mode": "track",
+                    "face_track": [
+                        {"t": 0.0, "faces": [{"x": 400.0, "y": 1400.0, "w": 280.0, "h": 300.0}]}
+                    ],
+                },
+                "punch": [],
+                "progress": False,
+                "captions": [],
+                "overlays": [],
+            })
+
+        edl_multi = dict(self.edl)
+        edl_multi["clips"] = clips
+        jsonio.write_json(self.edl_path, edl_multi)
+
+        # Rencana berisi satu kartu tanpa rect untuk tiap jenis kartu
+        plan_cards = {
+            "version": 1,
+            "mode": "suggest",
+            "clips": [
+                {
+                    "clip_id": "clip_01",
+                    "items": [
+                        {
+                            "id": "card_check",
+                            "type": "checklist",
+                            "start": 3.0,
+                            "end": 8.0,
+                            "props": {
+                                "title": "Checklist Tiga",
+                                "items": [
+                                    {"text": "Langkah 1", "done_at": 4.0},
+                                    {"text": "Langkah 2", "done_at": 5.5},
+                                    {"text": "Langkah 3", "done_at": 7.0},
+                                ],
+                            },
+                            "reason": "Uji kartu checklist tanpa rect",
+                        }
+                    ],
+                },
+                {
+                    "clip_id": "clip_02",
+                    "items": [
+                        {
+                            "id": "card_chart",
+                            "type": "chart_grow",
+                            "start": 3.0,
+                            "end": 8.0,
+                            "props": {
+                                "title": "Pertumbuhan",
+                                "labels": ["Q1", "Q2", "Q3"],
+                                "values": [10.0, 30.0, 70.0],
+                                "tag": "+600%",
+                            },
+                            "reason": "Uji kartu chart without rect",
+                        }
+                    ],
+                },
+                {
+                    "clip_id": "clip_03",
+                    "items": [
+                        {
+                            "id": "card_ui",
+                            "type": "ui_panel",
+                            "start": 3.0,
+                            "end": 8.0,
+                            "props": {
+                                "title": "Galeri Kasus",
+                                "tag": "BARU",
+                                "thumbs": 6,
+                                "input": "Cari data",
+                            },
+                            "reason": "Uji panel ui 6 thumbs without rect",
+                        }
+                    ],
+                },
+                {
+                    "clip_id": "clip_04",
+                    "items": [
+                        {
+                            "id": "card_phone",
+                            "type": "phone_frame",
+                            "start": 3.0,
+                            "end": 8.0,
+                            "props": {
+                                "title": "Fitur Unggulan",
+                                "lines": ["Baris satu", "Baris dua", "Baris tiga", "Baris empat"],
+                            },
+                            "reason": "Uji phone frame 4 baris without rect",
+                        }
+                    ],
+                },
+            ],
+        }
+        jsonio.write_json(self.wd / "fx_plan.json", plan_cards)
+
+        code_validate = cli.main(["fx-validate", str(self.wd)])
+        self.assertEqual(code_validate, 0)
+        rep = jsonio.read_json(self.wd / "fx_plan.report.json")
+        for c in rep["clips"]:
+            for it in c["items"]:
+                self.assertIn(it["status"], ("accepted", "accepted_with_warnings"), f"Item {it['id']} ditolak: {it.get('errors')}")
+                ov = it.get("overlay")
+                self.assertIsNotNone(ov)
+                self.assertIn("rect", ov)
+
+        code_preview = cli.main(["fx-preview", str(self.wd)])
+        self.assertEqual(code_preview, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

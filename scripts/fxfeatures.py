@@ -43,19 +43,23 @@ from __future__ import annotations
 
 import copy
 import re
+from collections import Counter
 from typing import Any
 
 from . import fxcatalog
 from . import layout
 from .layout import Rect
+from . import presets_phone
 from .lib import text as lib_text
 
 __all__ = [
     "APP_LEXICON",
     "CANVAS_HEIGHT",
+    "HONORIFIC_TITLES",
     "MAX_MOMENTS_PER_CLIP",
     "NUMBER_IDIOMS",
     "PERCENT_WORDS",
+    "PRODUCT_STOP_WORDS",
     "QUESTION_HOOK_MARKERS",
     "REVEAL_MARKERS",
     "SCALE_WORDS",
@@ -147,35 +151,196 @@ QUESTION_HOOK_MARKERS: tuple[str, ...] = (
     "tau gak",
 )
 
-# Leksikon nama aplikasi/layanan digital umum
+# Leksikon nama aplikasi/layanan digital umum (Indonesia & global)
 APP_LEXICON: frozenset[str] = frozenset(
     {
         "instagram",
         "tiktok",
         "whatsapp",
+        "telegram",
         "google",
         "youtube",
         "tokopedia",
         "shopee",
+        "lazada",
+        "bukalapak",
         "gojek",
         "grab",
+        "traveloka",
         "excel",
-        "chatgpt",
-        "twitter",
-        "facebook",
+        "word",
+        "powerpoint",
         "notion",
         "figma",
+        "canva",
+        "chatgpt",
         "spotify",
+        "netflix",
+        "twitter",
+        "facebook",
         "slack",
         "zoom",
-        "canva",
+        "linkedin",
+        "trello",
+        "jira",
+        "discord",
+        "threads",
+        "capcut",
+        "snackvideo",
+        "dana",
+        "ovo",
+        "gopay",
+        "linkaja",
+        "flip",
+        "bibit",
+        "ajaib",
+        "blibli",
     }
 )
 
-# Kata kerja interaksi layar aplikasi
+# Kata kerja interaksi layar aplikasi (spesifikasi: tanpa cari/pasang/tekan; cari HANYA sebagai 'cari di')
 SCREEN_ACTION_VERBS: frozenset[str] = frozenset(
-    {"buka", "klik", "download", "unduh", "install", "pasang", "tekan"}
+    {
+        "buka",
+        "klik",
+        "download",
+        "unduh",
+        "install",
+        "ketik",
+        "login",
+        "scroll",
+        "search",
+    }
 )
+
+# Daftar henti kapitalisasi ASR yang sering muncul di awal kalimat / acak
+PRODUCT_STOP_WORDS: frozenset[str] = frozenset(
+    {
+        "oke",
+        "deal",
+        "tidak",
+        "cukup",
+        "ya",
+        "iya",
+        "gak",
+        "nggak",
+        "bener",
+        "betul",
+        "sekali",
+        "jadi",
+        "nah",
+        "lho",
+        "loh",
+        "wah",
+        "eh",
+        "hmm",
+        "kan",
+        "dong",
+        "sih",
+        "kok",
+        "yuk",
+        "lah",
+        "deh",
+        "pun",
+        "ini",
+        "itu",
+        "ada",
+        "mau",
+        "bisa",
+        "udah",
+        "sudah",
+        "belum",
+        "lagi",
+        "terus",
+        "apa",
+        "siapa",
+        "kapan",
+        "dimana",
+        "kenapa",
+        "bagaimana",
+        "mengapa",
+        "tapi",
+        "tetapi",
+        "dan",
+        "atau",
+        "karena",
+        "kalau",
+        "jika",
+        "bila",
+        "supaya",
+        "agar",
+        "untuk",
+        "dengan",
+        "pada",
+        "dari",
+        "ke",
+        "di",
+        "sebelum",
+        "sesudah",
+        "setelah",
+        "kemudian",
+        "lalu",
+        "mereka",
+        "kita",
+        "kami",
+        "kamu",
+        "saya",
+        "aku",
+        "dia",
+        "beliau",
+        "semua",
+        "banyak",
+        "sedikit",
+        "sangat",
+        "amat",
+        "paling",
+        "harus",
+        "wajib",
+        "boleh",
+        "bukan",
+    }
+)
+
+# Gelar/sebutan orang (bila mendahului token berkapital -> nama orang, bukan produk)
+HONORIFIC_TITLES: frozenset[str] = frozenset(
+    {
+        "om",
+        "mas",
+        "mbak",
+        "bang",
+        "kak",
+        "pak",
+        "bu",
+        "bapak",
+        "ibu",
+        "dr",
+        "prof",
+        "tuan",
+        "nyonya",
+    }
+)
+
+
+def _match_lexicon(word: str) -> str | None:
+    """Cek apakah sebuah token cocok dengan leksikon produk, toleran akhiran '-nya'."""
+    raw = word.strip(".,?!;:\"'()[]{}")
+    if not raw:
+        return None
+    low = raw.lower()
+    if low in APP_LEXICON:
+        return raw
+
+    # Toleran akhiran "-nya" atau "nya"
+    if low.endswith("-nya") and len(low) > 4:
+        base = low[:-4]
+        if base in APP_LEXICON:
+            return raw
+    elif low.endswith("nya") and len(low) > 3:
+        base = low[:-3]
+        if base in APP_LEXICON:
+            return raw
+
+    return None
 
 # Penanda kalimat pengungkapan fakta
 REVEAL_MARKERS: frozenset[str] = frozenset(
@@ -400,9 +565,27 @@ def _evaluate_fits(
         max_scale = layout.max_punch_scale(punch, moment_t0, moment_t1)
         zones = layout.forbidden_zones(raw_faces, max_scale)
 
-        default_size = eff_meta["default_size"]
-        fitted_rect = layout.place_overlay(
-            eff_name, default_size, zones, caption_rects, taken_rects
+        req_size = fxcatalog.required_size(eff_name, eff_meta.get("example"))
+        if req_size is None:
+            req_size = eff_meta.get("default_size")
+
+        scan_x = 60.0
+        if eff_name == "phone_frame":
+            ex_props = eff_meta.get("example")
+            side = "right"
+            if isinstance(ex_props, dict):
+                props_dict = ex_props.get("props") if isinstance(ex_props.get("props"), dict) else ex_props
+                if isinstance(props_dict, dict):
+                    side = props_dict.get("side", "right")
+            if side == "left":
+                scan_x = float(presets_phone.PHONE_DEFAULT_X_LEFT)
+            elif side == "right" or side is None:
+                scan_x = float(presets_phone.PHONE_DEFAULT_X_RIGHT)
+            else:
+                scan_x = 60.0
+
+        fitted_rect = layout.scan_free_rect(
+            req_size, zones, caption_rects, taken_rects, x=scan_x, avoid_caption=True
         )
 
         if fitted_rect is None:
@@ -633,44 +816,110 @@ def _extract_moments(
             )
 
     # 3. Pemicu: LIST
-    # Urutan kata penanda: "pertama" ... "kedua" ... "ketiga" dst.
-    # Minimal 2 butir berurutan.
-    # Waktu done_at berasal dari waktu kata penanda!
-    list_marker_names = ["pertama", "kedua", "ketiga", "keempat", "kelima", "keenam"]
-    detected_markers: list[dict[str, Any]] = []
-
-    for w in words_flat:
-        w_clean = _clean_token(w["w"])
-        # Abaikan idiom "pertama kali"
-        if w_clean == "pertama":
-            # Periksa kata berikutnya
-            w_idx = words_flat.index(w)
-            if w_idx + 1 < len(words_flat):
-                next_clean = _clean_token(words_flat[w_idx + 1]["w"])
-                if next_clean == "kali":
-                    continue
-        if w_clean in list_marker_names:
-            detected_markers.append(
+    # Urutan kata penanda: "pertama" < "kedua" < "ketiga" dst. atau isyarat jumlah.
+    # Wajib >= 2 penanda urutan BERBEDA dan BERURUTAN NAIK, ATAU isyarat jumlah diikuti >= 1 penanda.
+    ordinal_map = {
+        "pertama": 1,
+        "kedua": 2,
+        "ketiga": 3,
+        "keempat": 4,
+        "kelima": 5,
+        "keenam": 6,
+        "ketujuh": 7,
+        "kedelapan": 8,
+        "kesembilan": 9,
+        "kesepuluh": 10,
+    }
+    cardinal_map = {
+        "satu": 1,
+        "dua": 2,
+        "tiga": 3,
+        "empat": 4,
+        "lima": 5,
+        "enam": 6,
+        "tujuh": 7,
+        "delapan": 8,
+        "sembilan": 9,
+        "sepuluh": 10,
+    }
+    count_cue_re = re.compile(
+        r"(?:ada\s+)?(dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|\d+)\s+"
+        r"(hal|cara|alasan|langkah|tips|poin|syarat)\b",
+        re.IGNORECASE,
+    )
+    count_cues: list[dict[str, Any]] = []
+    for cap in captions:
+        cap_t = str(cap.get("text", ""))
+        for m in count_cue_re.finditer(cap_t):
+            count_cues.append(
                 {
-                    "marker": w_clean,
-                    "index": list_marker_names.index(w_clean) + 1,
-                    "done_at": round(w["start"], 3),
-                    "w": w["w"],
-                    "cap_text": w["cap_text"],
-                    "start": w["start"],
-                    "end": w["end"],
+                    "start": float(cap.get("start", 0.0)),
+                    "match": m.group(0),
                 }
             )
 
-    if len(detected_markers) >= 2:
-        # Kelompokkan marker yang urut
-        first_m = detected_markers[0]
-        last_m = detected_markers[-1]
+    detected_markers: list[dict[str, Any]] = []
+    for i, w in enumerate(words_flat):
+        w_raw = str(w.get("w", ""))
+        w_clean = _clean_token(w_raw).lower()
+        if not w_clean:
+            continue
+
+        # Abaikan idiom "pertama kali", "pertama-tama"
+        if w_clean == "pertama":
+            if i + 1 < len(words_flat):
+                next_clean = _clean_token(words_flat[i + 1]["w"]).lower()
+                if next_clean in ("kali", "tama"):
+                    continue
+            if "pertama-tama" in w_raw.lower() or "pertama_tama" in w_raw.lower():
+                continue
+
+        # Abaikan "kedua kakinya", "kedua tangan", dll bila hanya merujuk sepasang anggota tubuh/orang
+        if w_clean == "kedua":
+            if i + 1 < len(words_flat):
+                next_clean = _clean_token(words_flat[i + 1]["w"]).lower()
+                if next_clean in ("kaki", "kakinya", "tangan", "tangannya", "mata", "orang", "belah", "pihak"):
+                    continue
+
+        rank = None
+        marker_name = w_clean
+        if w_clean in ordinal_map:
+            rank = ordinal_map[w_clean]
+        else:
+            has_cue = any(c["start"] <= float(w.get("start", 0.0)) + 0.5 for c in count_cues)
+            if has_cue and w_clean in cardinal_map:
+                rank = cardinal_map[w_clean]
+
+        if rank is not None:
+            detected_markers.append(
+                {
+                    "marker": marker_name,
+                    "rank": rank,
+                    "done_at": round(float(w["start"]), 3),
+                    "w": w_raw,
+                    "cap_text": w.get("cap_text", ""),
+                    "start": float(w["start"]),
+                    "end": float(w["end"]),
+                }
+            )
+
+    ascending_markers: list[dict[str, Any]] = []
+    for m in detected_markers:
+        if not ascending_markers:
+            ascending_markers.append(m)
+        elif m["rank"] > ascending_markers[-1]["rank"]:
+            ascending_markers.append(m)
+        # Penanda identik berulang atau urutan menurun tidak dihitung
+
+    has_any_cue = bool(count_cues)
+    if len(ascending_markers) >= 2 or (has_any_cue and len(ascending_markers) >= 1):
+        first_m = ascending_markers[0]
+        last_m = ascending_markers[-1]
         t0 = round(first_m["start"], 3)
         t1 = round(max(last_m["end"] + 1.5, t0 + 4.0), 3)
 
         items_evidence = []
-        for idx, m in enumerate(detected_markers):
+        for idx, m in enumerate(ascending_markers):
             items_evidence.append(
                 {
                     "index": idx + 1,
@@ -680,13 +929,13 @@ def _extract_moments(
                 }
             )
 
-        conf = min(0.95, round(0.75 + 0.05 * (len(detected_markers) - 2), 2))
+        conf = min(0.95, round(0.75 + 0.05 * (len(ascending_markers) - 2), 2)) if len(ascending_markers) >= 2 else 0.80
         raw_moments.append(
             {
                 "t0": t0,
                 "t1": min(round(clip_duration, 3), t1),
                 "trigger": "list",
-                "text": f"Daftar {len(detected_markers)} butir: {first_m['cap_text']}",
+                "text": f"Daftar {len(ascending_markers)} butir: {first_m['cap_text']}",
                 "confidence": conf,
                 "evidence": {"items": items_evidence},
             }
@@ -724,18 +973,43 @@ def _extract_moments(
             )
 
     # 5. Pemicu: PRODUCT
+    # Bukti: (a) leksikon merek/aplikasi/layanan, (b) kata kerja layar + objek,
+    # (c) token berkapital berulang >= 2 kali di klip mid-sentence (bukan stop word, bukan gelar orang).
+    # Kumpulkan kandidat repeated_capital di seluruh klip terlebih dahulu:
+    mid_sentence_caps: list[str] = []
+    for cap in captions:
+        cap_text = str(cap.get("text", "")).strip()
+        words_in_cap = cap_text.split()
+        for idx, rw in enumerate(words_in_cap):
+            if idx == 0:
+                continue
+            prev_word = words_in_cap[idx - 1]
+            if prev_word.endswith((".", "?", "!", ",")):
+                continue
+            prev_clean = prev_word.strip(".,?!;:\"'()[]{}").lower()
+            if prev_clean in HONORIFIC_TITLES:
+                continue
+            clean_cand = rw.strip(".,?!;:\"'()[]{}")
+            if len(clean_cand) >= 2 and clean_cand[0].isupper() and clean_cand[1:].islower():
+                low_cand = clean_cand.lower()
+                if low_cand not in PRODUCT_STOP_WORDS and low_cand not in HONORIFIC_TITLES:
+                    mid_sentence_caps.append(low_cand)
+
+    repeated_cap_counts = Counter(mid_sentence_caps)
+    qualified_repeated = {k for k, v in repeated_cap_counts.items() if v >= 2}
+
     for cap in captions:
         text = str(cap.get("text", "")).strip()
         t0 = float(cap.get("start", 0.0))
         t1 = float(cap.get("end", t0))
         raw_words = text.split()
 
-        # 5a. Leksikon aplikasi
+        # 5a. Leksikon merek/aplikasi/layanan
         found_lexicon = None
         for rw in raw_words:
-            c = _clean_token(rw)
-            if c in APP_LEXICON:
-                found_lexicon = rw
+            matched = _match_lexicon(rw)
+            if matched:
+                found_lexicon = matched
                 break
 
         if found_lexicon:
@@ -751,46 +1025,99 @@ def _extract_moments(
             )
             continue
 
-        # 5b. Aksi layar + objek
-        found_action = False
-        action_word = ""
+        # 5b. Kata kerja layar (buka, klik, download, unduh, install, ketik, login, scroll, search, cari di)
+        # diikuti <= 3 kata berisi token berkapital/leksikon/objek.
+        # Pemindaian <= 3 kata objek berhenti SETELAH token yang berakhir . ? !
+        # (token kata kerja sendiri yang berakhir tanda itu berarti TIDAK ada objek; koma tidak menghentikan).
+        found_screen_action = False
+        action_match_str = ""
         for idx, rw in enumerate(raw_words):
-            c = _clean_token(rw)
-            if c in SCREEN_ACTION_VERBS and idx + 1 < len(raw_words):
-                found_action = True
-                action_word = f"{rw} {raw_words[idx + 1]}"
+            c = _clean_token(rw).lower()
+            is_action_verb = False
+            verb_len = 1
+            if c in SCREEN_ACTION_VERBS:
+                is_action_verb = True
+            elif c == "cari":
+                if not rw.endswith((".", "?", "!")) and idx + 1 < len(raw_words):
+                    if _clean_token(raw_words[idx + 1]).lower() == "di":
+                        is_action_verb = True
+                        verb_len = 2
+
+            if is_action_verb:
+                last_verb_word = raw_words[idx + verb_len - 1]
+                if last_verb_word.endswith((".", "?", "!")):
+                    continue
+
+                start_k = idx + verb_len
+                end_k = min(len(raw_words), start_k + 3)
+                for k in range(start_k, end_k):
+                    cand_word = raw_words[k]
+                    clean_cand = cand_word.strip(".,?!;:\"'()[]{}")
+                    if _match_lexicon(clean_cand) is not None:
+                        found_screen_action = True
+                        action_match_str = f"{rw} {clean_cand}"
+                        break
+                    if clean_cand.lower() in ("aplikasi", "aplikasinya", "profil", "akun", "halaman", "layar", "menu"):
+                        found_screen_action = True
+                        action_match_str = f"{rw} {clean_cand}"
+                        break
+                    prev_w = raw_words[k - 1].strip(".,?!;:\"'()[]{}").lower() if k > 0 else ""
+                    if (
+                        len(clean_cand) >= 2
+                        and clean_cand[0].isupper()
+                        and clean_cand.lower() not in PRODUCT_STOP_WORDS
+                        and clean_cand.lower() not in HONORIFIC_TITLES
+                        and prev_w not in HONORIFIC_TITLES
+                    ):
+                        found_screen_action = True
+                        action_match_str = f"{rw} {clean_cand}"
+                        break
+                    if cand_word.endswith((".", "?", "!")):
+                        break
+            if found_screen_action:
                 break
 
-        if found_action:
+        if found_screen_action:
             raw_moments.append(
                 {
                     "t0": round(t0, 3),
                     "t1": round(max(t1, t0 + 2.5), 3),
                     "trigger": "product",
                     "text": text,
-                    "confidence": 0.75,
-                    "evidence": {"matched": action_word, "source": "action"},
+                    "confidence": 0.85,
+                    "evidence": {"matched": action_match_str, "source": "screen_action"},
                 }
             )
             continue
 
-        # 5c. Kata berkapital berulang di tengah kalimat (index > 0)
+        # 5c. Token berkapital berulang >= 2 kali di klip mid-sentence
+        found_repeated = None
         for idx, rw in enumerate(raw_words):
-            if idx > 0 and len(rw) >= 3 and rw[0].isupper() and rw[1:].islower():
-                # Abaikan tanda baca
-                clean_cap = _clean_token(rw)
-                if clean_cap not in lib_text.HANGING_CONJUNCTIONS:
-                    raw_moments.append(
-                        {
-                            "t0": round(t0, 3),
-                            "t1": round(max(t1, t0 + 2.5), 3),
-                            "trigger": "product",
-                            "text": text,
-                            "confidence": 0.65,
-                            "evidence": {"matched": rw, "source": "capitalized"},
-                        }
-                    )
-                    break
+            if idx == 0:
+                continue
+            prev_word = raw_words[idx - 1]
+            if prev_word.endswith((".", "?", "!", ",")):
+                continue
+            prev_clean = prev_word.strip(".,?!;:\"'()[]{}").lower()
+            if prev_clean in HONORIFIC_TITLES:
+                continue
+            clean_cand = rw.strip(".,?!;:\"'()[]{}")
+            if clean_cand.lower() in qualified_repeated:
+                found_repeated = clean_cand
+                break
+
+        if found_repeated:
+            raw_moments.append(
+                {
+                    "t0": round(t0, 3),
+                    "t1": round(max(t1, t0 + 2.5), 3),
+                    "trigger": "product",
+                    "text": text,
+                    "confidence": 0.70,
+                    "evidence": {"matched": found_repeated, "source": "repeated_capital"},
+                }
+            )
+            continue
 
     # 6. Pemicu: EMPHASIS
     for w in words_flat:

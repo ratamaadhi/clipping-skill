@@ -11,6 +11,7 @@ from . import fxfeatures
 from . import kinetic
 from . import layout
 from . import presets
+from . import presets_phone
 from . import pullback
 from .layout import Rect
 from .lib.text import clean as clean_text
@@ -349,79 +350,81 @@ def validate(
             final_rect_dict: dict[str, Any] | None = None
 
             if budget_class == "card":
+                req_size = fxcatalog.required_size(eff_type, props if isinstance(props, dict) else None)
                 has_face_track = bool(face_track and isinstance(face_track, list))
-                if not has_face_track:
-                    if rect_in is None:
-                        errors.append(
-                            f"item '{it_id}': tanpa face_track: layout kartu memerlukan face_track "
-                            f"untuk verifikasi area bebas; beri rect eksplisit"
-                        )
-                    else:
-                        warnings.append(f"item '{it_id}': tanpa face_track: tak terverifikasi")
-                        try:
-                            r_obj = Rect(rect_in["x"], rect_in["y"], rect_in["w"], rect_in["h"])
-                            if r_obj.x < 0 or r_obj.y < 0 or r_obj.x + r_obj.w > 1080 or r_obj.y + r_obj.h > 1920:
-                                errors.append(f"item '{it_id}': rect melewati batas kanvas 1080x1920")
-                            else:
-                                final_rect_dict = {
-                                    "x": round(r_obj.x, 1),
-                                    "y": round(r_obj.y, 1),
-                                    "w": round(r_obj.w, 1),
-                                    "h": round(r_obj.h, 1),
-                                }
-                        except Exception as exc:
-                            errors.append(f"item '{it_id}': rect tidak sah: {exc}")
-                else:
-                    shots_info = fxfeatures._analyze_shots(face_track, clip_dur)
-                    overlapping_shots = [s for s in shots_info if not (s["t1"] <= start_f or s["t0"] >= end_f)]
-                    is_close_up = any(s.get("shot_kind") == "close_up" for s in overlapping_shots)
 
-                    raw_shot_faces: list[Rect] = []
+                if rect_in is not None:
+                    active_rect = None
                     try:
-                        all_shot_tuples = layout.shots(face_track, clip_dur)
-                        for st0, st1, faces in all_shot_tuples:
-                            if not (st1 <= start_f or st0 >= end_f):
-                                raw_shot_faces.extend(faces)
-                    except Exception:
-                        pass
-
-                    if is_close_up and rect_in is None:
-                        errors.append(
-                            f"item '{it_id}': close-up: tidak ada area bebas; beri rect eksplisit atau pilih zoom_through_text/pullback"
-                        )
-                    else:
-                        active_rect: Rect | None = None
-                        if rect_in is not None:
-                            try:
-                                active_rect = Rect(rect_in["x"], rect_in["y"], rect_in["w"], rect_in["h"])
-                                if (
-                                    active_rect.x < 0
-                                    or active_rect.y < 0
-                                    or active_rect.x + active_rect.w > 1080
-                                    or active_rect.y + active_rect.h > 1920
-                                ):
-                                    errors.append(f"item '{it_id}': rect melewati batas kanvas 1080x1920")
-                            except Exception as exc:
-                                errors.append(f"item '{it_id}': rect tidak sah: {exc}")
+                        r_obj = Rect(rect_in["x"], rect_in["y"], rect_in["w"], rect_in["h"])
+                        if r_obj.x < 0 or r_obj.y < 0 or r_obj.x + r_obj.w > 1080 or r_obj.y + r_obj.h > 1920:
+                            errors.append(f"item '{it_id}': rect melewati batas kanvas 1080x1920")
                         else:
-                            max_scale = layout.max_punch_scale(punch, start_f, end_f)
-                            zones = layout.forbidden_zones(raw_shot_faces, max_scale)
-                            default_size = eff_meta["default_size"]
-                            placed = layout.place_overlay(eff_type, default_size, zones, [], [])
-                            if placed is None:
-                                errors.append(f"item '{it_id}': tidak ada slot bebas untuk kartu")
-                            else:
-                                active_rect = placed
-
-                        if active_rect is not None and not errors:
+                            active_rect = r_obj
                             final_rect_dict = {
-                                "x": round(active_rect.x, 1),
-                                "y": round(active_rect.y, 1),
-                                "w": round(active_rect.w, 1),
-                                "h": round(active_rect.h, 1),
+                                "x": round(r_obj.x, 1),
+                                "y": round(r_obj.y, 1),
+                                "w": round(r_obj.w, 1),
+                                "h": round(r_obj.h, 1),
                             }
-                            max_scale = layout.max_punch_scale(punch, start_f, end_f)
-                            zones = layout.forbidden_zones(raw_shot_faces, max_scale)
+                            if req_size is not None:
+                                req_w, req_h = req_size
+                                if r_obj.h + 1e-9 < req_h:
+                                    if eff_type == "checklist":
+                                        item_count = len(props.get("items", [])) if isinstance(props, dict) and isinstance(props.get("items"), list) else 3
+                                        errors.append(
+                                            f"item '{it_id}': rect['h'] {r_obj.h:g} < tinggi yang dibutuhkan {req_h:g} "
+                                            f"(2 x {presets.CARD_PAD_Y:g} padding + {presets.CARD_HEADER_H:g} header + "
+                                            f"{item_count} baris x {presets.CARD_ROW_H:g}); kartu tidak boleh disusutkan"
+                                        )
+                                    elif eff_type == "phone_frame":
+                                        line_count = len(props.get("lines", [])) if isinstance(props, dict) and isinstance(props.get("lines"), list) else 3
+                                        errors.append(
+                                            f"item '{it_id}': rect['h'] {r_obj.h:g} < tinggi yang dibutuhkan {req_h:g} "
+                                            f"({presets_phone.PHONE_BASE_H:g} base + {line_count} baris x {presets_phone.PHONE_LINE_ROW_H:g}); "
+                                            f"badan perangkat tidak boleh disusutkan"
+                                        )
+                                    elif eff_type == "ui_panel":
+                                        thumbs = props.get("thumbs", presets.UI_DEFAULT_THUMBS) if isinstance(props, dict) else presets.UI_DEFAULT_THUMBS
+                                        errors.append(
+                                            f"item '{it_id}': rect['h'] {r_obj.h:g} < tinggi yang dibutuhkan {req_h:g} "
+                                            f"({thumbs} thumbnail); kartu tidak boleh disusutkan"
+                                        )
+                                    elif eff_type == "chart_grow":
+                                        has_title = bool(props.get("title")) if isinstance(props, dict) else False
+                                        chart_req_h = presets._chart_required_height(has_title)
+                                        errors.append(
+                                            f"item '{it_id}': rect['h'] {r_obj.h:g} < tinggi yang dibutuhkan {chart_req_h:g}; kartu tidak boleh disusutkan"
+                                        )
+                                    else:
+                                        errors.append(
+                                            f"item '{it_id}': rect['h'] {r_obj.h:g} < tinggi yang dibutuhkan {req_h:g}; kartu tidak boleh disusutkan"
+                                        )
+                                if eff_type == "ui_panel":
+                                    cols = min(props.get("thumbs", presets.UI_DEFAULT_THUMBS), 3) if isinstance(props, dict) else 3
+                                    min_req_w = presets.UI_PAD_X * 2 + cols * presets.UI_THUMB_W + (cols - 1) * presets.UI_THUMB_GAP_X
+                                    if r_obj.w + 1e-9 < min_req_w:
+                                        errors.append(
+                                            f"item '{it_id}': rect['w'] {r_obj.w:g} < lebar yang dibutuhkan {min_req_w:g} "
+                                            f"untuk {cols} kolom thumbnail; thumbnail tidak muat"
+                                        )
+                    except Exception as exc:
+                        errors.append(f"item '{it_id}': rect tidak sah: {exc}")
+
+                    if not has_face_track:
+                        warnings.append(f"item '{it_id}': tanpa face_track: tak terverifikasi")
+                    else:
+                        raw_shot_faces: list[Rect] = []
+                        try:
+                            all_shot_tuples = layout.shots(face_track, clip_dur)
+                            for st0, st1, faces in all_shot_tuples:
+                                if not (st1 <= start_f or st0 >= end_f):
+                                    raw_shot_faces.extend(faces)
+                        except Exception:
+                            pass
+                        max_scale = layout.max_punch_scale(punch, start_f, end_f)
+                        zones = layout.forbidden_zones(raw_shot_faces, max_scale)
+                        if active_rect is not None:
                             max_overlap_pct = 0.0
                             for z in zones:
                                 if active_rect.intersects(z):
@@ -433,6 +436,83 @@ def validate(
                                 warnings.append(
                                     f"item '{it_id}': rect beririsan dengan zona wajah ({max_overlap_pct:.1f}% tumpang tindih)"
                                 )
+                else:
+                    # rect_in is None
+                    if not has_face_track:
+                        errors.append(
+                            f"item '{it_id}': tanpa face_track: layout kartu memerlukan face_track "
+                            f"untuk verifikasi area bebas; beri rect eksplisit"
+                        )
+                    else:
+                        shots_info = fxfeatures._analyze_shots(face_track, clip_dur)
+                        overlapping_shots = [s for s in shots_info if not (s["t1"] <= start_f or s["t0"] >= end_f)]
+                        is_close_up = any(s.get("shot_kind") == "close_up" for s in overlapping_shots)
+                        if is_close_up:
+                            errors.append(
+                                f"item '{it_id}': close-up: tidak ada area bebas; beri rect eksplisit atau pilih zoom_through_text/pullback"
+                            )
+                        else:
+                            raw_shot_faces = []
+                            try:
+                                all_shot_tuples = layout.shots(face_track, clip_dur)
+                                for st0, st1, faces in all_shot_tuples:
+                                    if not (st1 <= start_f or st0 >= end_f):
+                                        raw_shot_faces.extend(faces)
+                            except Exception:
+                                pass
+                            max_scale = layout.max_punch_scale(punch, start_f, end_f)
+                            zones = layout.forbidden_zones(raw_shot_faces, max_scale)
+                            target_size = req_size if req_size is not None else eff_meta.get("default_size")
+                            overlapping_caps = [
+                                cb["rect"] for cb in caption_blocks
+                                if max(start_f, cb["start"]) < min(end_f, cb["end"])
+                            ]
+                            taken_rects = [
+                                Rect(r["x"], r["y"], r["w"], r["h"])
+                                for _, _, _, a_s, a_e, r in accepted_list
+                                if r is not None and max(start_f, a_s) < min(end_f, a_e)
+                            ]
+                            scan_x = 60.0
+                            if eff_type == "phone_frame":
+                                side = props.get("side", "right") if isinstance(props, dict) else "right"
+                                if side == "left":
+                                    scan_x = float(presets_phone.PHONE_DEFAULT_X_LEFT)
+                                elif side == "right" or side is None:
+                                    scan_x = float(presets_phone.PHONE_DEFAULT_X_RIGHT)
+                                else:
+                                    scan_x = 60.0
+
+                            placed = layout.scan_free_rect(
+                                target_size,
+                                zones,
+                                caption_rects=overlapping_caps,
+                                taken=taken_rects,
+                                x=scan_x,
+                                avoid_caption=True,
+                            )
+                            if placed is None:
+                                w_int, h_int = int(round(target_size[0])), int(round(target_size[1]))
+                                test_no_zones = layout.scan_free_rect(
+                                    target_size,
+                                    [],
+                                    caption_rects=overlapping_caps,
+                                    taken=taken_rects,
+                                    x=scan_x,
+                                    avoid_caption=True,
+                                )
+                                if test_no_zones is None:
+                                    cause = "tak ada tempat di zona aman"
+                                else:
+                                    cause = "zona wajah menutup semua posisi"
+                                errors.append(f"item '{it_id}': tidak ada area bebas untuk kartu {w_int}x{h_int}: {cause}")
+                            else:
+                                active_rect = placed
+                                final_rect_dict = {
+                                    "x": round(active_rect.x, 1),
+                                    "y": round(active_rect.y, 1),
+                                    "w": round(active_rect.w, 1),
+                                    "h": round(active_rect.h, 1),
+                                }
             elif rect_in is not None and isinstance(rect_in, dict):
                 try:
                     r_obj = Rect(rect_in["x"], rect_in["y"], rect_in["w"], rect_in["h"])
@@ -543,6 +623,52 @@ def validate(
                     except Exception:
                         pass
 
+            clean_overlay: dict[str, Any] = {
+                "type": eff_type,
+                "start": round(start_f, 3),
+                "end": round(end_f, 3),
+                "props": copy.deepcopy(props) if isinstance(props, dict) else {},
+            }
+            if final_rect_dict is not None:
+                clean_overlay["rect"] = final_rect_dict
+
+            # Invarian wajib: setiap item accepted/accepted_with_warnings harus lolos pembuat preset ASLI
+            # dengan overlay PERSIS seperti yang akan ditulis (yaitu pembuat dijalankan lagi pada overlay final setelah rect ditentukan).
+            if not errors:
+                if eff_type == "pullback":
+                    fake_clip = {
+                        "duration": clip_dur,
+                        "segments": [{"src_start": 0.0, "src_end": clip_dur}],
+                        "overlays": [clean_overlay],
+                    }
+                    try:
+                        pb_plan, pb_warns = pullback.build(fake_clip, fps=float(fps))
+                        if pb_plan is None:
+                            errors.append(f"item '{it_id}': pullback di luar durasi klip ({clip_dur:.2f}s)")
+                        else:
+                            for w in pb_warns:
+                                if w not in warnings:
+                                    warnings.append(w)
+                    except pullback.PullbackError as exc:
+                        errors.append(f"item '{it_id}': {exc}")
+                    except Exception as exc:
+                        errors.append(f"item '{it_id}': kesalahan validasi pullback: {exc}")
+                else:
+                    try:
+                        p_plan, p_warns = presets.REGISTRY[eff_type](
+                            orig_idx, clean_overlay, clip_dur, fps=float(fps)
+                        )
+                        if p_plan is None:
+                            errors.append(f"item '{it_id}': jendela di luar durasi klip ({clip_dur:.2f}s)")
+                        else:
+                            for w in p_warns:
+                                if w not in warnings:
+                                    warnings.append(w)
+                    except presets.PresetError as exc:
+                        errors.append(f"item '{it_id}': {exc}")
+                    except Exception as exc:
+                        errors.append(f"item '{it_id}': kesalahan validasi preset: {exc}")
+
             if errors:
                 item_results_by_idx[orig_idx] = {
                     "id": it_id,
@@ -562,15 +688,6 @@ def validate(
                     accepted_transform += 1
 
                 accepted_list.append((it_id, eff_type, budget_class, start_f, end_f, final_rect_dict))
-
-                clean_overlay: dict[str, Any] = {
-                    "type": eff_type,
-                    "start": round(start_f, 3),
-                    "end": round(end_f, 3),
-                    "props": copy.deepcopy(props) if isinstance(props, dict) else {},
-                }
-                if final_rect_dict is not None:
-                    clean_overlay["rect"] = final_rect_dict
 
                 if warnings:
                     status = "accepted_with_warnings"

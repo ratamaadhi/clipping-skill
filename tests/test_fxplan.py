@@ -5,9 +5,13 @@ from __future__ import annotations
 import copy
 import json
 import unittest
+from unittest import mock
 from typing import Any
 
 from scripts import fxcatalog
+from scripts import layout
+from scripts import presets
+from scripts import presets_phone
 from tests.helpers import ROOT
 from tests.test_schema_drift import missing_required, undeclared_keys
 from tests.test_schema_fx_plan import load_report_schema
@@ -1017,6 +1021,412 @@ class FxPlanValidationTest(unittest.TestCase):
         self.assertIn("# Laporan Pengesahan Rencana Efek", md)
         self.assertIn("clip_04", md)
         self.assertIn("p1", md)
+
+    def test_validator_injects_full_size_rect_for_card(self) -> None:
+        # Shot sedang: wajah di y=1500 (bawah kanvas)
+        edl = self._make_edl(reframe={
+            "face_track": [
+                {"t": 0.0, "faces": [{"x": 450.0, "y": 1500.0, "w": 180.0, "h": 250.0}]}
+            ]
+        })
+        plan = self._make_plan([
+            {
+                "id": "c1",
+                "type": "checklist",
+                "start": 5.0,
+                "end": 11.0,
+                "props": {
+                    "title": "Tiga Butir",
+                    "items": [
+                        {"text": "Butir 1", "done_at": 6.0},
+                        {"text": "Butir 2", "done_at": 8.0},
+                        {"text": "Butir 3", "done_at": 10.0},
+                    ],
+                },
+                "reason": "Uji penyuntikan rect penuh",
+            }
+        ])
+        rep = fxplan.validate(edl, plan)
+        item = rep["clips"][0]["items"][0]
+        self.assertIn(item["status"], ("accepted", "accepted_with_warnings"))
+        ov = item["overlay"]
+        self.assertIsNotNone(ov)
+        self.assertIn("rect", ov)
+        # Rect harus UKURAN PENUH: w=960.0, h=328.0 (2*32 + 72 + 3*64), BUKAN 240 / 300
+        self.assertEqual(ov["rect"]["w"], 960.0)
+        self.assertEqual(ov["rect"]["h"], 328.0)
+
+    def test_validator_rejects_explicit_rect_smaller_than_required_size(self) -> None:
+        # Mutan (g): rect eksplisit lebih kecil dari required_size harus DITOLAK
+        edl = self._make_edl(reframe={
+            "face_track": [
+                {"t": 0.0, "faces": [{"x": 450.0, "y": 1500.0, "w": 180.0, "h": 250.0}]}
+            ]
+        })
+        # 3 butir membutuhkan h=328.0, diberi h=240.0
+        plan = self._make_plan([
+            {
+                "id": "c1",
+                "type": "checklist",
+                "start": 5.0,
+                "end": 11.0,
+                "props": {
+                    "title": "Tiga Butir",
+                    "items": [
+                        {"text": "Butir 1", "done_at": 6.0},
+                        {"text": "Butir 2", "done_at": 8.0},
+                        {"text": "Butir 3", "done_at": 10.0},
+                    ],
+                },
+                "rect": {"x": 60.0, "y": 300.0, "w": 960.0, "h": 240.0},
+                "reason": "Rect sengaja dibuat lebih pendek dari kebutuhan",
+            }
+        ])
+        rep = fxplan.validate(edl, plan)
+        item = rep["clips"][0]["items"][0]
+        self.assertEqual(item["status"], "rejected", "Rect lebih pendek dari required_size harus ditolak")
+        self.assertTrue(any("tidak boleh disusutkan" in e.lower() or "tinggi yang dibutuhkan" in e.lower() for e in item["errors"]))
+
+    def test_validator_rejects_when_no_free_slot_and_mentions_full_size(self) -> None:
+        # Mutan (h): jika tidak ada slot bebas pada shot non-close-up, harus rejected dan menyebut ukuran WxH
+        # Dua wajah shot sedang (h=300 < 0.35*1920) yang menghalangi slot atas dan slot bawah
+        edl = self._make_edl(reframe={
+            "face_track": [
+                {"t": 0.0, "faces": [
+                    {"x": 100.0, "y": 300.0, "w": 880.0, "h": 500.0},
+                    {"x": 100.0, "y": 900.0, "w": 880.0, "h": 500.0},
+                ]}
+            ]
+        })
+        plan = self._make_plan([
+            {
+                "id": "c1",
+                "type": "checklist",
+                "start": 5.0,
+                "end": 11.0,
+                "props": {
+                    "title": "Tiga Butir",
+                    "items": [
+                        {"text": "Butir 1", "done_at": 6.0},
+                        {"text": "Butir 2", "done_at": 8.0},
+                        {"text": "Butir 3", "done_at": 10.0},
+                    ],
+                },
+                "reason": "Tidak ada area bebas",
+            }
+        ])
+        rep = fxplan.validate(edl, plan)
+        item = rep["clips"][0]["items"][0]
+        self.assertEqual(item["status"], "rejected")
+        # Pesan penolakan harus menyebut ukuran penuh WxH
+        self.assertTrue(any("960x328" in e for e in item["errors"]), f"Errors: {item['errors']}")
+
+    def test_validator_reruns_preset_builder_on_final_overlay(self) -> None:
+        # Mutan (f): pembuat preset harus dijalankan ulang pada overlay final
+        edl = self._make_edl(reframe={
+            "face_track": [
+                {"t": 0.0, "faces": [{"x": 450.0, "y": 1500.0, "w": 180.0, "h": 250.0}]}
+            ]
+        })
+        plan = self._make_plan([
+            {
+                "id": "c1",
+                "type": "checklist",
+                "start": 5.0,
+                "end": 11.0,
+                "props": {
+                    "title": "Tiga Butir",
+                    "items": [
+                        {"text": "Butir 1", "done_at": 6.0},
+                        {"text": "Butir 2", "done_at": 8.0},
+                        {"text": "Butir 3", "done_at": 10.0},
+                    ],
+                },
+                "reason": "Uji rerun preset builder",
+            }
+        ])
+        orig_builder = presets.REGISTRY["checklist"]
+        call_count = 0
+
+        def spy_builder(*args: Any, **kwargs: Any) -> Any:
+            nonlocal call_count
+            call_count += 1
+            if call_count >= 2:
+                raise presets.PresetError("galat pembuat overlay final")
+            return orig_builder(*args, **kwargs)
+
+        with mock.patch.dict(presets.REGISTRY, {"checklist": spy_builder}):
+            rep = fxplan.validate(edl, plan)
+            item = rep["clips"][0]["items"][0]
+            self.assertEqual(item["status"], "rejected", "Jika pembuat overlay final gagal, item harus rejected")
+            self.assertTrue(any("galat pembuat overlay final" in e for e in item["errors"]))
+
+    # -----------------------------------------------------------------------
+    # Langkah 7f: Uji Perbaikan Cacat 1 & Cacat 4 (Mutan G, H, J)
+    # -----------------------------------------------------------------------
+    def test_phone_frame_side_placement_and_face_avoidance(self) -> None:
+        """Cacat 1: phone_frame tanpa rect harus menghormati side (kanan=640, kiri=60).
+
+        Zona wajah di sisi kanan menggeser/menolak telepon kanan tapi tidak memengaruhi kiri;
+        zona wajah di sisi kiri menggeser/menolak telepon kiri tapi tidak memengaruhi kanan.
+        Rect eksplisit tidak ditulis ulang. Side tidak sah ditolak. Invarian lolos pembuat.
+        """
+        # 1. Kanan bawaan (tanpa side) dan eksplisit right
+        edl_clean = self._make_edl(reframe={
+            "face_track": [{"t": 0.0, "faces": [{"x": 450.0, "y": 1500.0, "w": 180.0, "h": 250.0}]}]
+        })
+        plan_right = self._make_plan([
+            {
+                "id": "p_def",
+                "type": "phone_frame",
+                "start": 5.0,
+                "end": 10.0,
+                "props": {"title": "Notif", "lines": ["baris 1", "baris 2"]},
+                "reason": "side bawaan",
+            },
+            {
+                "id": "p_right",
+                "type": "phone_frame",
+                "start": 21.0,
+                "end": 26.0,
+                "props": {"title": "Notif Kanan", "lines": ["baris 1", "baris 2"], "side": "right"},
+                "reason": "side kanan",
+            },
+            {
+                "id": "p_left",
+                "type": "phone_frame",
+                "start": 37.0,
+                "end": 42.0,
+                "props": {"title": "Notif Kiri", "lines": ["baris 1", "baris 2"], "side": "left"},
+                "reason": "side kiri",
+            },
+        ])
+        rep = fxplan.validate(edl_clean, plan_right)
+        items = rep["clips"][0]["items"]
+        self.assertEqual(items[0]["overlay"]["rect"]["x"], float(presets_phone.PHONE_DEFAULT_X_RIGHT))
+        self.assertEqual(items[1]["overlay"]["rect"]["x"], float(presets_phone.PHONE_DEFAULT_X_RIGHT))
+        self.assertEqual(items[2]["overlay"]["rect"]["x"], float(presets_phone.PHONE_DEFAULT_X_LEFT))
+
+        # 2. Wajah di sisi kanan (x=600..800, y=250..450):
+        # Telepon kanan (x=640..1020) beririsan dengan wajah di y=250 -> harus digeser vertikal (> 250).
+        # Telepon kiri (x=60..440) TIDAK beririsan dengan wajah di kanan -> tetap di y=250.
+        edl_face_right = self._make_edl(reframe={
+            "face_track": [{"t": 0.0, "faces": [{"x": 600.0, "y": 250.0, "w": 200.0, "h": 200.0}]}]
+        })
+        plan_both = self._make_plan([
+            {
+                "id": "p_right",
+                "type": "phone_frame",
+                "start": 5.0,
+                "end": 10.0,
+                "props": {"title": "Kanan", "lines": ["baris 1", "baris 2"], "side": "right"},
+                "reason": "uji wajah kanan",
+            },
+            {
+                "id": "p_left",
+                "type": "phone_frame",
+                "start": 21.0,
+                "end": 26.0,
+                "props": {"title": "Kiri", "lines": ["baris 1", "baris 2"], "side": "left"},
+                "reason": "uji wajah kanan pada kartu kiri",
+            },
+        ])
+        rep_fr = fxplan.validate(edl_face_right, plan_both)
+        it_r = rep_fr["clips"][0]["items"][0]
+        it_l = rep_fr["clips"][0]["items"][1]
+        self.assertTrue(it_r["status"].startswith("accepted"))
+        self.assertGreater(it_r["overlay"]["rect"]["y"], 250.0, "Telepon kanan harus tergeser dari wajah kanan")
+        self.assertEqual(it_l["overlay"]["rect"]["y"], 250.0, "Telepon kiri tidak boleh terpengaruh wajah kanan")
+
+        # 3. Wajah di sisi kiri (x=60..260, y=250..450):
+        # Telepon kiri beririsan -> tergeser vertikal (> 250).
+        # Telepon kanan tidak beririsan -> tetap di y=250.
+        edl_face_left = self._make_edl(reframe={
+            "face_track": [{"t": 0.0, "faces": [{"x": 60.0, "y": 250.0, "w": 200.0, "h": 200.0}]}]
+        })
+        rep_fl = fxplan.validate(edl_face_left, plan_both)
+        it_r2 = rep_fl["clips"][0]["items"][0]
+        it_l2 = rep_fl["clips"][0]["items"][1]
+        self.assertEqual(it_r2["overlay"]["rect"]["y"], 250.0, "Telepon kanan tidak boleh terpengaruh wajah kiri")
+        self.assertTrue(it_l2["status"].startswith("accepted"))
+        self.assertGreater(it_l2["overlay"]["rect"]["y"], 250.0, "Telepon kiri harus tergeser dari wajah kiri")
+
+        # Invarian pembuat preset lolos
+        p_plan, _ = presets.REGISTRY["phone_frame"](0, it_l2["overlay"], 50.0, fps=30.0)
+        self.assertIsNotNone(p_plan)
+
+        # 4. Rect eksplisit dipertahankan (tidak ditulis ulang)
+        plan_explicit = self._make_plan([
+            {
+                "id": "p_exp",
+                "type": "phone_frame",
+                "start": 5.0,
+                "end": 10.0,
+                "props": {"title": "Eksplisit", "lines": ["baris 1", "baris 2"], "side": "right"},
+                "rect": {"x": 120.0, "y": 300.0, "w": 380.0, "h": 560.0},
+                "reason": "rect eksplisit",
+            }
+        ])
+        rep_exp = fxplan.validate(edl_clean, plan_explicit)
+        self.assertEqual(rep_exp["clips"][0]["items"][0]["overlay"]["rect"]["x"], 120.0)
+
+        # 5. Side tidak sah -> ditolak oleh pembuat preset
+        plan_bad_side = self._make_plan([
+            {
+                "id": "p_bad",
+                "type": "phone_frame",
+                "start": 5.0,
+                "end": 10.0,
+                "props": {"title": "Bad Side", "lines": ["baris 1", "baris 2"], "side": "atas"},
+                "reason": "side invalid",
+            }
+        ])
+        rep_bad = fxplan.validate(edl_clean, plan_bad_side)
+        self.assertEqual(rep_bad["clips"][0]["items"][0]["status"], "rejected")
+
+    def test_mutant_g_validator_face_punch_scale(self) -> None:
+        """Mutan G: pengesah harus memperhitungkan skala punch pada zona wajah."""
+        # Face at (300, 500, 200, 200). Canvas center is (540, 960).
+        # Scale 1.25 -> zone y spans 375..645; card (h=264) placed at y=650.0.
+        # Scale 1.0  -> zone y spans 492..708; card (h=264) placed at y=710.0.
+        edl = self._make_edl(
+            reframe={
+                "face_track": [{"t": 0.0, "faces": [{"x": 300.0, "y": 500.0, "w": 200.0, "h": 200.0}]}]
+            },
+            punch=[{"t": 0.0, "scale": 1.25}],
+        )
+        plan_auto = self._make_plan([
+            {
+                "id": "c1",
+                "type": "checklist",
+                "start": 2.0,
+                "end": 6.0,
+                "props": {"title": "Uji", "items": [{"text": "satu", "done_at": 3.0}, {"text": "dua", "done_at": 4.0}]},
+                "reason": "cek punch scale pada auto placement",
+            }
+        ])
+        rep_auto = fxplan.validate(edl, plan_auto, fps=30.0)
+        it_auto = rep_auto["clips"][0]["items"][0]
+        self.assertEqual(it_auto["status"], "accepted")
+        self.assertEqual(
+            it_auto["overlay"]["rect"]["y"],
+            650.0,
+            "Skala punch 1.25 harus menempatkan kartu di y=650.0 (skala 1.0 akan menghasilkan 710.0)",
+        )
+
+        # Uji kedua: rect eksplisit di y=650.0 pada scale 1.25 tidak memotong zona wajah (0% overlap)
+        plan_exp = self._make_plan([
+            {
+                "id": "c2",
+                "type": "checklist",
+                "start": 2.0,
+                "end": 6.0,
+                "props": {"title": "Uji", "items": [{"text": "satu", "done_at": 3.0}, {"text": "dua", "done_at": 4.0}]},
+                "rect": {"x": 60.0, "y": 650.0, "w": 960.0, "h": 264.0},
+                "reason": "cek punch scale pada rect eksplisit",
+            }
+        ])
+        rep_exp = fxplan.validate(edl, plan_exp, fps=30.0)
+        it_exp = rep_exp["clips"][0]["items"][0]
+        self.assertEqual(it_exp["status"], "accepted")
+        self.assertFalse(
+            any("rect beririsan dengan zona wajah" in w for w in it_exp.get("warnings", [])),
+            "Pada skala punch 1.25 rect y=650 tidak beririsan; pada 1.0 akan beririsan",
+        )
+
+    def test_mutant_h_caption_time_window_filtering(self) -> None:
+        """Mutan H: caption hanya dihindari bila beririsan waktu dengan jendela overlay."""
+        edl = self._make_edl(
+            reframe={
+                "face_track": [{"t": 0.0, "faces": [{"x": 450.0, "y": 1500.0, "w": 180.0, "h": 250.0}]}]
+            },
+            punch=[],
+            captions=[{"start": 0.0, "end": 1.0, "text": "Awal video"}],
+        )
+        fake_blocks = [{"start": 0.0, "end": 1.0, "rect": layout.Rect(60.0, 250.0, 960.0, 100.0)}]
+        plan = self._make_plan([
+            {
+                "id": "c1",
+                "type": "checklist",
+                "start": 5.0,
+                "end": 10.0,
+                "props": {"title": "T", "items": [{"text": "a", "done_at": 6.0}, {"text": "b", "done_at": 7.0}]},
+                "reason": "overlay di [5.0, 10.0] tidak beririsan waktu dengan caption [0.0, 1.0]",
+            }
+        ])
+        with mock.patch("scripts.fxplan._kinetic_caption_blocks", return_value=fake_blocks):
+            rep = fxplan.validate(edl, plan)
+            it = rep["clips"][0]["items"][0]
+            self.assertEqual(
+                it["overlay"]["rect"]["y"],
+                250.0,
+                "Caption di luar jendela waktu overlay tidak boleh menggeser kartu dari y=250",
+            )
+            self.assertEqual(it.get("warnings", []), [])
+
+    def test_mutant_j_rejection_causes_face_vs_safe_area(self) -> None:
+        """Mutan J: sebab penolakan 'zona wajah menutup semua posisi' vs 'tak ada tempat di zona aman'."""
+        # Sebab 1: Zona wajah menutup seluruh posisi bebas (shot medium dua wajah menutupi y=350..1250)
+        edl_face = self._make_edl(reframe={
+            "face_track": [
+                {
+                    "t": 0.0,
+                    "faces": [
+                        {"x": 400.0, "y": 350.0, "w": 300.0, "h": 400.0},
+                        {"x": 400.0, "y": 850.0, "w": 300.0, "h": 400.0},
+                    ],
+                }
+            ]
+        })
+        plan_face = self._make_plan([
+            {
+                "id": "c1",
+                "type": "chart_grow",
+                "start": 5.0,
+                "end": 10.0,
+                "props": {"title": "Tren", "labels": ["A", "B", "C"], "values": [10.0, 20.0, 30.0], "tag": "TREND"},
+                "reason": "tertutup wajah",
+            }
+        ])
+        rep_face = fxplan.validate(edl_face, plan_face)
+        it_face = rep_face["clips"][0]["items"][0]
+        self.assertEqual(it_face["status"], "rejected")
+        self.assertTrue(
+            any("zona wajah menutup semua posisi" in e for e in it_face["errors"]),
+            f"Harus menyebut zona wajah: {it_face['errors']}",
+        )
+        self.assertFalse(
+            any("tak ada tempat di zona aman" in e for e in it_face["errors"]),
+            f"Tidak boleh menyebut zona aman: {it_face['errors']}",
+        )
+
+        # Sebab 2: Tak ada tempat di zona aman (kartu terlalu besar untuk zona aman bahkan tanpa wajah)
+        edl_clean = self._make_edl(reframe={
+            "face_track": [{"t": 0.0, "faces": [{"x": 450.0, "y": 1500.0, "w": 100.0, "h": 100.0}]}]
+        })
+        plan_big = self._make_plan([
+            {
+                "id": "c2",
+                "type": "checklist",
+                "start": 5.0,
+                "end": 10.0,
+                "props": {"title": "T", "items": [{"text": "a", "done_at": 6.0}, {"text": "b", "done_at": 7.0}]},
+                "reason": "kartu terlalu besar",
+            }
+        ])
+        with mock.patch("scripts.fxcatalog.required_size", return_value=(960.0, 1300.0)):
+            rep_big = fxplan.validate(edl_clean, plan_big)
+            it_big = rep_big["clips"][0]["items"][0]
+            self.assertEqual(it_big["status"], "rejected")
+            self.assertTrue(
+                any("tak ada tempat di zona aman" in e for e in it_big["errors"]),
+                f"Harus menyebut zona aman: {it_big['errors']}",
+            )
+            self.assertFalse(
+                any("zona wajah menutup semua posisi" in e for e in it_big["errors"]),
+                f"Tidak boleh menyebut zona wajah: {it_big['errors']}",
+            )
+
 
 
 if __name__ == "__main__":

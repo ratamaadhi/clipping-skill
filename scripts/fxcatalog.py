@@ -29,6 +29,7 @@ __all__ = [
     "catalog_markdown",
     "get",
     "names",
+    "required_size",
 ]
 
 # ---------------------------------------------------------------------------
@@ -63,28 +64,54 @@ END_MARGIN: float = 0.4
 
 
 # ---------------------------------------------------------------------------
-# Ukuran Bawaan Kartu (diturunkan dari konstanta preset)
+# Ukuran Kebutuhan per Props (required_size) & Ukuran Bawaan Kartu
 # ---------------------------------------------------------------------------
 
-_CHECKLIST_DEFAULT_SIZE = (
-    presets.CARD_W,
-    2.0 * presets.CARD_PAD_Y + presets.CARD_HEADER_H + 3 * presets.CARD_ROW_H,
-)
+def required_size(
+    eff_type: str,
+    props: dict[str, Any] | None = None,
+) -> tuple[float, float] | None:
+    """Hitung ukuran kebutuhan (w, h) per efek dan props dari geometri preset asli.
 
-_CHART_GROW_DEFAULT_SIZE = (
-    presets.CHART_CARD_W,
-    presets.CHART_CARD_H,
-)
+    Mengembalikan None untuk efek tanpa kebutuhan kotak (zoom_through_text, pullback).
+    """
+    if eff_type == "checklist":
+        item_count = 3
+        if isinstance(props, dict):
+            items = props.get("items")
+            if isinstance(items, list):
+                item_count = len(items)
+        h = 2.0 * presets.CARD_PAD_Y + presets.CARD_HEADER_H + item_count * presets.CARD_ROW_H
+        return (float(presets.CARD_W), float(h))
 
-_UI_PANEL_DEFAULT_SIZE = (
-    presets.UI_CARD_W,
-    float(presets._ui_required_height(presets.UI_DEFAULT_THUMBS)),
-)
+    if eff_type == "phone_frame":
+        line_count = 3
+        if isinstance(props, dict):
+            lines = props.get("lines")
+            if isinstance(lines, list):
+                line_count = len(lines)
+        h = presets_phone.PHONE_BASE_H + line_count * presets_phone.PHONE_LINE_ROW_H
+        return (float(presets_phone.PHONE_DEFAULT_W), float(h))
 
-_PHONE_FRAME_DEFAULT_SIZE = (
-    presets_phone.PHONE_DEFAULT_W,
-    float(presets_phone.PHONE_BASE_H + 3 * presets_phone.PHONE_LINE_ROW_H),
-)
+    if eff_type == "ui_panel":
+        thumbs = presets.UI_DEFAULT_THUMBS
+        if isinstance(props, dict):
+            t_val = props.get("thumbs")
+            if isinstance(t_val, int) and not isinstance(t_val, bool) and t_val >= 1:
+                thumbs = t_val
+        h = presets._ui_required_height(thumbs)
+        return (float(presets.UI_CARD_W), float(h))
+
+    if eff_type == "chart_grow":
+        return (float(presets.CHART_CARD_W), float(presets.CHART_CARD_H))
+
+    return None
+
+
+_CHECKLIST_DEFAULT_SIZE = required_size("checklist")
+_CHART_GROW_DEFAULT_SIZE = required_size("chart_grow")
+_UI_PANEL_DEFAULT_SIZE = required_size("ui_panel")
+_PHONE_FRAME_DEFAULT_SIZE = required_size("phone_frame")
 
 
 # ---------------------------------------------------------------------------
