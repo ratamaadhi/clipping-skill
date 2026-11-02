@@ -228,6 +228,34 @@ def _clip_from_item(
     }
 
 
+def pick_diverse(
+    ranked: list[dict[str, Any]], top_n: int, max_overlap: float = 0.6
+) -> list[dict[str, Any]]:
+    """Ambil kandidat berperingkat tertinggi tanpa tumpang tindih berat.
+
+    Kandidat dibentuk dengan jendela bergeser, jadi kandidat peringkat 2 dan 3
+    sering memuat satu sama lain. Menayangkan keduanya menghasilkan dua klip
+    yang mirip, dan itu terlihat sebagai konten berulang.
+    """
+    picked: list[dict[str, Any]] = []
+    for item in ranked:
+        a0, a1 = int(item["atom_start"]), int(item["atom_end"])
+        heavy = False
+        for p in picked:
+            b0, b1 = int(p["atom_start"]), int(p["atom_end"])
+            inter = max(0, min(a1, b1) - max(a0, b0))
+            span = min(a1 - a0, b1 - b0)
+            if span > 0 and inter / span >= max_overlap:
+                heavy = True
+                break
+        if heavy:
+            continue
+        picked.append(item)
+        if len(picked) >= top_n:
+            break
+    return picked
+
+
 def build(work_dir: str | Path, top_n: int = 5) -> dict[str, Any]:
     wd = Path(work_dir)
     meta = jsonio.read_json(wd / "meta.json")
@@ -235,7 +263,7 @@ def build(work_dir: str | Path, top_n: int = 5) -> dict[str, Any]:
     atoms = jsonio.read_json(wd / "atoms.json")
     scored = jsonio.read_json(wd / "scored.json")
 
-    ranked = scored.get("scored", [])[: max(1, top_n)]
+    ranked = pick_diverse(scored.get("scored", []), max(1, top_n))
     if not ranked:
         raise ValueError("scored.json tidak punya kandidat")
 

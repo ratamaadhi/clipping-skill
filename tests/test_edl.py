@@ -191,3 +191,34 @@ class OutputFpsTest(unittest.TestCase):
 
     def test_30fps_source_unchanged(self) -> None:
         self.assertEqual(self._build(30.0)["output"]["fps"], 30.0)
+
+
+class PickDiverseTest(unittest.TestCase):
+    """Kandidat dari jendela bergeser sering memuat satu sama lain."""
+
+    def _c(self, cid: int, a0: int, a1: int) -> dict:
+        return {"id": cid, "atom_start": a0, "atom_end": a1}
+
+    def test_contained_candidate_is_skipped(self) -> None:
+        ranked = [self._c(10, 72, 86), self._c(2, 72, 78), self._c(5, 59, 72)]
+        picked = edl.pick_diverse(ranked, 3)
+        self.assertEqual([p["id"] for p in picked], [10, 5])
+
+    def test_identical_range_kept_once(self) -> None:
+        ranked = [self._c(1, 10, 20), self._c(2, 10, 20)]
+        self.assertEqual(len(edl.pick_diverse(ranked, 5)), 1)
+
+    def test_disjoint_all_kept(self) -> None:
+        ranked = [self._c(1, 0, 10), self._c(2, 10, 20), self._c(3, 20, 30)]
+        self.assertEqual(len(edl.pick_diverse(ranked, 3)), 3)
+
+    def test_slight_overlap_allowed(self) -> None:
+        ranked = [self._c(1, 0, 10), self._c(2, 9, 19)]
+        self.assertEqual(len(edl.pick_diverse(ranked, 2)), 2)
+
+    def test_respects_top_n(self) -> None:
+        ranked = [self._c(i, i * 10, i * 10 + 5) for i in range(10)]
+        self.assertEqual(len(edl.pick_diverse(ranked, 3)), 3)
+
+    def test_empty_input(self) -> None:
+        self.assertEqual(edl.pick_diverse([], 3), [])
