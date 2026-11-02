@@ -1,0 +1,43 @@
+{
+  "id": "Phases600",
+  "reps": 2,
+  "specs": {
+    "hold_only_90": "15-104",
+    "animated_only_30": "0-14,105-119"
+  },
+  "runs": {
+    "hold_only_90": [
+      {
+        "frames": 90,
+        "render_s": 7.814180738,
+        "ms_per_frame": 86.82423042222223,
+        "wall_s": 11.323920590803027
+      },
+      {
+        "frames": 90,
+        "render_s": 7.814536937,
+        "ms_per_frame": 86.82818818888889,
+        "wall_s": 11.374156398698688
+      }
+    ],
+    "animated_only_30": [
+      {
+        "frames": 30,
+        "render_s": 3.357072736,
+        "ms_per_frame": 111.90242453333333,
+        "wall_s": 6.47079399600625
+      },
+      {
+        "frames": 30,
+        "render_s": 3.883427099,
+        "ms_per_frame": 129.44756996666666,
+        "wall_s": 7.842287352308631
+      }
+    ]
+  },
+  "median_ms_per_frame": {
+    "hold_only_90": 86.8,
+    "animated_only_30": 120.7
+  },
+  "note": "ms/frame = render_ms dalam proses / jumlah frame; berisi biaya awal per panggilan renderFrames yang ikut terbagi"
+}

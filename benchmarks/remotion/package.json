@@ -1,0 +1,13 @@
+{
+  "name": "clipping-remotion-bench",
+  "private": true,
+  "type": "module",
+  "description": "Spike kelayakan Remotion (Langkah 1 rencana motion tier-2). Bukan kode produk.",
+  "dependencies": {
+    "remotion": "4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

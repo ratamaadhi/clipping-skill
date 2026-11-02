@@ -1,0 +1,1266 @@
+{
+  "experiment": "hold-frame",
+  "plan": {
+    "frames": 120,
+    "fps": 30,
+    "enter_frames": 15,
+    "exit_frames": 15,
+    "hold_frames": 90,
+    "subset_frames": 31,
+    "subset_spec": "0-15,105-119",
+    "predicted_frame_ratio_P": 3.87,
+    "alpha": "RGBA (latar transparan)"
+  },
+  "legend": {
+    "T": "terukur oleh skrip ini",
+    "P": "perkiraan, tidak diukur"
+  },
+  "meta": {
+    "date": "2026-11-01 19:26:14",
+    "cpu": "Intel(R) Core(TM) i5-7300U CPU @ 2.60GHz",
+    "nproc": 4,
+    "mem_available_mb_start": 2135,
+    "loadavg_start": [
+      0.22,
+      0.6,
+      0.67
+    ],
+    "node": "v24.15.0",
+    "ffmpeg": "ffmpeg version 8.0.1-3ubuntu2 Copyright (c) 2000-2025 the FFmpeg developers",
+    "browser": "/home/tama/.local/bin/chromium :: Google Chrome for Testing 145.0.7632.6",
+    "remotion": "4.0.539",
+    "python": "3.14.7",
+    "concurrency": 1,
+    "cooldown_s": 6.0,
+    "note_node": "permintaan tugas menyebut Node 22; mesin ini hanya punya Node 24.15 (sama dengan baseline lama)"
+  },
+  "static_check_numeric_T": {
+    "frames": 120,
+    "enter_frames": 15,
+    "hold_frames": 90,
+    "exit_frames": 15,
+    "hold_distinct_poses": 1,
+    "hold_all_same_reference": true,
+    "all_finite": true,
+    "enter_distinct_poses": 15,
+    "exit_distinct_poses": 15,
+    "first_hold_frame": 15,
+    "last_hold_frame": 104,
+    "enter_last_pose": {
+      "phase": "enter",
+      "rise": -0.5544845884568872,
+      "blur": 0,
+      "scale": 1.001247590324028,
+      "opacity": 1
+    },
+    "exit_first_pose_differs_from_hold": true,
+    "ok": true
+  },
+  "configs": [
+    {
+      "id": "Phases600",
+      "width": 1080,
+      "height": 600,
+      "measured": true,
+      "reps": 3,
+      "frames": {
+        "full": 120,
+        "subset": 31,
+        "hold_skipped": 89,
+        "frame_ratio_predicted_P": 3.87
+      },
+      "wall_s": {
+        "full": {
+          "values": [
+            14.42,
+            14.38,
+            14.58
+          ],
+          "median": 14.42,
+          "min": 14.38,
+          "max": 14.58
+        },
+        "subset": {
+          "values": [
+            6.72,
+            7.07,
+            7.02
+          ],
+          "median": 7.02,
+          "min": 6.72,
+          "max": 7.07
+        }
+      },
+      "render_phase_s_inprocess": {
+        "full": {
+          "values": [
+            11.12,
+            10.92,
+            11.1
+          ],
+          "median": 11.1,
+          "min": 10.92,
+          "max": 11.12
+        },
+        "subset": {
+          "values": [
+            3.5,
+            3.51,
+            3.61
+          ],
+          "median": 3.51,
+          "min": 3.5,
+          "max": 3.61
+        },
+        "note": "renderFrames saja, diukur timer Node; bundling/browser/select/close dikeluarkan"
+      },
+      "fixed_setup_s_inprocess": {
+        "full": {
+          "values": [
+            2.86,
+            3.01,
+            2.96
+          ],
+          "median": 2.96,
+          "min": 2.86,
+          "max": 3.01
+        },
+        "subset": {
+          "values": [
+            2.79,
+            3.08,
+            2.93
+          ],
+          "median": 2.93,
+          "min": 2.79,
+          "max": 3.08
+        },
+        "note": "bundle + buka browser + selectComposition + tutup; tidak berkurang oleh hold frame"
+      },
+      "fps": {
+        "full_wall": 8.32,
+        "subset_wall": 4.42,
+        "full_render_phase": 10.81,
+        "subset_render_phase": 8.83
+      },
+      "speedup": {
+        "render_wall_whole_process": {
+          "value": 2.05,
+          "paired_per_rep": [
+            2.15,
+            2.03,
+            2.08
+          ],
+          "basis": "median(wall penuh)/median(wall subset)"
+        },
+        "render_phase_only": {
+          "value": 3.16,
+          "paired_per_rep": [
+            3.18,
+            3.11,
+            3.07
+          ]
+        }
+      },
+      "ffmpeg_s": {
+        "reconstruct_tpad_null_sink": {
+          "values": [
+            0.113,
+            0.107,
+            0.114
+          ],
+          "median": 0.113,
+          "min": 0.107,
+          "max": 0.114,
+          "frames_out": 120,
+          "note": "decode 31 PNG + tpad + concat -> 120 frame, tanpa menulis; mirip dipakai kompositor"
+        },
+        "reconstruct_tpad_to_png": {
+          "values": [
+            1.557,
+            1.527,
+            1.691
+          ],
+          "median": 1.557,
+          "min": 1.527,
+          "max": 1.691,
+          "frames_out": 120,
+          "note": "batas atas: juga meng-encode 120 PNG ke disk"
+        },
+        "decode_full_120_null_sink": {
+          "values": [
+            0.208,
+            0.219,
+            0.212
+          ],
+          "median": 0.212,
+          "min": 0.208,
+          "max": 0.219,
+          "frames_out": 120,
+          "note": "pembanding jalur lama: ffmpeg membaca 120 PNG"
+        },
+        "hardlink_120_names": {
+          "values": [
+            0.00266,
+            0.00384,
+            0.00374
+          ],
+          "median": 0.00374,
+          "min": 0.00266,
+          "max": 0.00384,
+          "note": "alternatif tanpa ffmpeg; kompositor tetap membaca 120 PNG"
+        }
+      },
+      "net_speedup": {
+        "conservative_recon_to_png": 1.68,
+        "production_like_recon_null": 2.02,
+        "symmetric_both_pay_ffmpeg_read": 2.05,
+        "render_phase_only_plus_recon_null": 3.06,
+        "definition": "waktu_penuh / (waktu_subset + biaya_rekonstruksi); semua median dari waktu dinding"
+      },
+      "equivalence": {
+        "per_rep_byte_checks": [
+          {
+            "rep": 1,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          },
+          {
+            "rep": 2,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          },
+          {
+            "rep": 3,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          }
+        ],
+        "reconstruction": {
+          "frames_out": 120,
+          "frames_expected": 120,
+          "frame_count_ok": true,
+          "framemd5": {
+            "frames_recon": 120,
+            "frames_full": 120,
+            "frames_equal": 120,
+            "hold_equal": 90,
+            "note": "md5 byte RGBA hasil decode, filter tpad+concat langsung (tanpa menulis PNG)"
+          },
+          "pixel_png_roundtrip": {
+            "frames_compared": 120,
+            "frames_identical": 120,
+            "max_abs_channel_diff": 0,
+            "hold_frames_compared": 90,
+            "hold_frames_identical": 90,
+            "note": "PNG hasil rekonstruksi ffmpeg dibaca ulang dan dibandingkan per piksel RGBA dengan render penuh"
+          }
+        }
+      },
+      "memory": {
+        "avail_min_mb_over_runs": 1408,
+        "swapout_pages_total": 121
+      },
+      "runs": {
+        "full": [
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 14.41532134078443,
+            "files": 120,
+            "inner": {
+              "id": "Phases600",
+              "width": 1080,
+              "height": 600,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2128.32943,
+              "browser_open_ms": 393.200082,
+              "select_ms": 319.105525,
+              "render_ms": 11123.349163,
+              "close_ms": 22.771233,
+              "total_ms": 13986.755433
+            },
+            "avail_before_mb": 2160,
+            "avail_min_mb": 1686,
+            "swapout_pages_delta": 25,
+            "loadavg1_before": 0.2,
+            "rep": 1
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 14.380978664383292,
+            "files": 120,
+            "inner": {
+              "id": "Phases600",
+              "width": 1080,
+              "height": 600,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2240.637323,
+              "browser_open_ms": 413.939073,
+              "select_ms": 329.453282,
+              "render_ms": 10922.499323,
+              "close_ms": 28.840849,
+              "total_ms": 13935.36985
+            },
+            "avail_before_mb": 2193,
+            "avail_min_mb": 1408,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 0.96,
+            "rep": 2
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 14.578279474750161,
+            "files": 120,
+            "inner": {
+              "id": "Phases600",
+              "width": 1080,
+              "height": 600,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2175.842942,
+              "browser_open_ms": 421.203706,
+              "select_ms": 322.011217,
+              "render_ms": 11102.158709,
+              "close_ms": 39.163958,
+              "total_ms": 14060.380532
+            },
+            "avail_before_mb": 2165,
+            "avail_min_mb": 1702,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.02,
+            "rep": 3
+          }
+        ],
+        "subset": [
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 6.720326030626893,
+            "files": 31,
+            "inner": {
+              "id": "Phases600",
+              "width": 1080,
+              "height": 600,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2036.872059,
+              "browser_open_ms": 417.87052,
+              "select_ms": 316.172583,
+              "render_ms": 3499.261244,
+              "close_ms": 20.586793,
+              "total_ms": 6290.763199
+            },
+            "avail_before_mb": 1974,
+            "avail_min_mb": 1679,
+            "swapout_pages_delta": 96,
+            "loadavg1_before": 0.68,
+            "rep": 1
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 7.073834979906678,
+            "files": 31,
+            "inner": {
+              "id": "Phases600",
+              "width": 1080,
+              "height": 600,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2149.794777,
+              "browser_open_ms": 521.333701,
+              "select_ms": 388.594708,
+              "render_ms": 3509.669679,
+              "close_ms": 22.810797,
+              "total_ms": 6592.203662
+            },
+            "avail_before_mb": 2108,
+            "avail_min_mb": 1658,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 0.59,
+            "rep": 2
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 7.020752817392349,
+            "files": 31,
+            "inner": {
+              "id": "Phases600",
+              "width": 1080,
+              "height": 600,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2172.63764,
+              "browser_open_ms": 409.287944,
+              "select_ms": 330.376724,
+              "render_ms": 3612.779388,
+              "close_ms": 22.012306,
+              "total_ms": 6547.094002
+            },
+            "avail_before_mb": 2184,
+            "avail_min_mb": 1701,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.01,
+            "rep": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "Phases300",
+      "width": 540,
+      "height": 300,
+      "measured": true,
+      "reps": 3,
+      "frames": {
+        "full": 120,
+        "subset": 31,
+        "hold_skipped": 89,
+        "frame_ratio_predicted_P": 3.87
+      },
+      "wall_s": {
+        "full": {
+          "values": [
+            12.04,
+            12.48,
+            12.01
+          ],
+          "median": 12.04,
+          "min": 12.01,
+          "max": 12.48
+        },
+        "subset": {
+          "values": [
+            5.87,
+            7.84,
+            5.82
+          ],
+          "median": 5.87,
+          "min": 5.82,
+          "max": 7.84
+        }
+      },
+      "render_phase_s_inprocess": {
+        "full": {
+          "values": [
+            8.49,
+            8.19,
+            8.49
+          ],
+          "median": 8.49,
+          "min": 8.19,
+          "max": 8.49
+        },
+        "subset": {
+          "values": [
+            2.46,
+            2.63,
+            2.23
+          ],
+          "median": 2.46,
+          "min": 2.23,
+          "max": 2.63
+        },
+        "note": "renderFrames saja, diukur timer Node; bundling/browser/select/close dikeluarkan"
+      },
+      "fixed_setup_s_inprocess": {
+        "full": {
+          "values": [
+            3.07,
+            3.61,
+            3.06
+          ],
+          "median": 3.07,
+          "min": 3.06,
+          "max": 3.61
+        },
+        "subset": {
+          "values": [
+            2.95,
+            4.57,
+            3.1
+          ],
+          "median": 3.1,
+          "min": 2.95,
+          "max": 4.57
+        },
+        "note": "bundle + buka browser + selectComposition + tutup; tidak berkurang oleh hold frame"
+      },
+      "fps": {
+        "full_wall": 9.96,
+        "subset_wall": 5.28,
+        "full_render_phase": 14.13,
+        "subset_render_phase": 12.62
+      },
+      "speedup": {
+        "render_wall_whole_process": {
+          "value": 2.05,
+          "paired_per_rep": [
+            2.05,
+            1.59,
+            2.06
+          ],
+          "basis": "median(wall penuh)/median(wall subset)"
+        },
+        "render_phase_only": {
+          "value": 3.46,
+          "paired_per_rep": [
+            3.46,
+            3.12,
+            3.81
+          ]
+        }
+      },
+      "ffmpeg_s": {
+        "reconstruct_tpad_null_sink": {
+          "values": [
+            0.072,
+            0.07,
+            0.07
+          ],
+          "median": 0.07,
+          "min": 0.07,
+          "max": 0.072,
+          "frames_out": 120,
+          "note": "decode 31 PNG + tpad + concat -> 120 frame, tanpa menulis; mirip dipakai kompositor"
+        },
+        "reconstruct_tpad_to_png": {
+          "values": [
+            0.575,
+            0.571,
+            0.555
+          ],
+          "median": 0.571,
+          "min": 0.555,
+          "max": 0.575,
+          "frames_out": 120,
+          "note": "batas atas: juga meng-encode 120 PNG ke disk"
+        },
+        "decode_full_120_null_sink": {
+          "values": [
+            0.119,
+            0.118,
+            0.121
+          ],
+          "median": 0.119,
+          "min": 0.118,
+          "max": 0.121,
+          "frames_out": 120,
+          "note": "pembanding jalur lama: ffmpeg membaca 120 PNG"
+        },
+        "hardlink_120_names": {
+          "values": [
+            0.00268,
+            0.00266,
+            0.00357
+          ],
+          "median": 0.00268,
+          "min": 0.00266,
+          "max": 0.00357,
+          "note": "alternatif tanpa ffmpeg; kompositor tetap membaca 120 PNG"
+        }
+      },
+      "net_speedup": {
+        "conservative_recon_to_png": 1.87,
+        "production_like_recon_null": 2.03,
+        "symmetric_both_pay_ffmpeg_read": 2.05,
+        "render_phase_only_plus_recon_null": 3.36,
+        "definition": "waktu_penuh / (waktu_subset + biaya_rekonstruksi); semua median dari waktu dinding"
+      },
+      "equivalence": {
+        "per_rep_byte_checks": [
+          {
+            "rep": 1,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          },
+          {
+            "rep": 2,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          },
+          {
+            "rep": 3,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          }
+        ],
+        "reconstruction": {
+          "frames_out": 120,
+          "frames_expected": 120,
+          "frame_count_ok": true,
+          "framemd5": {
+            "frames_recon": 120,
+            "frames_full": 120,
+            "frames_equal": 120,
+            "hold_equal": 90,
+            "note": "md5 byte RGBA hasil decode, filter tpad+concat langsung (tanpa menulis PNG)"
+          },
+          "pixel_png_roundtrip": {
+            "frames_compared": 120,
+            "frames_identical": 120,
+            "max_abs_channel_diff": 0,
+            "hold_frames_compared": 90,
+            "hold_frames_identical": 90,
+            "note": "PNG hasil rekonstruksi ffmpeg dibaca ulang dan dibandingkan per piksel RGBA dengan render penuh"
+          }
+        }
+      },
+      "memory": {
+        "avail_min_mb_over_runs": 1438,
+        "swapout_pages_total": 0
+      },
+      "runs": {
+        "full": [
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 12.04368543624878,
+            "files": 120,
+            "inner": {
+              "id": "Phases300",
+              "width": 540,
+              "height": 300,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2220.756563,
+              "browser_open_ms": 466.335384,
+              "select_ms": 345.940637,
+              "render_ms": 8494.98527,
+              "close_ms": 38.738264,
+              "total_ms": 11566.756118
+            },
+            "avail_before_mb": 2147,
+            "avail_min_mb": 1677,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.38,
+            "rep": 1
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 12.47613089159131,
+            "files": 120,
+            "inner": {
+              "id": "Phases300",
+              "width": 540,
+              "height": 300,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2601.578669,
+              "browser_open_ms": 586.17372,
+              "select_ms": 406.990193,
+              "render_ms": 8189.851547,
+              "close_ms": 16.996781,
+              "total_ms": 11801.59091
+            },
+            "avail_before_mb": 2026,
+            "avail_min_mb": 1438,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.46,
+            "rep": 2
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 12.011040318757296,
+            "files": 120,
+            "inner": {
+              "id": "Phases300",
+              "width": 540,
+              "height": 300,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2256.956017,
+              "browser_open_ms": 429.580794,
+              "select_ms": 328.679088,
+              "render_ms": 8493.858441,
+              "close_ms": 40.307269,
+              "total_ms": 11549.381609
+            },
+            "avail_before_mb": 1991,
+            "avail_min_mb": 1696,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.63,
+            "rep": 3
+          }
+        ],
+        "subset": [
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 5.870323117822409,
+            "files": 31,
+            "inner": {
+              "id": "Phases300",
+              "width": 540,
+              "height": 300,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2157.995188,
+              "browser_open_ms": 418.201359,
+              "select_ms": 323.284179,
+              "render_ms": 2456.301689,
+              "close_ms": 48.735875,
+              "total_ms": 5404.51829
+            },
+            "avail_before_mb": 2186,
+            "avail_min_mb": 1697,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.12,
+            "rep": 1
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 7.841627361252904,
+            "files": 31,
+            "inner": {
+              "id": "Phases300",
+              "width": 540,
+              "height": 300,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 3536.553523,
+              "browser_open_ms": 576.750522,
+              "select_ms": 406.273614,
+              "render_ms": 2628.641945,
+              "close_ms": 52.508516,
+              "total_ms": 7200.72812
+            },
+            "avail_before_mb": 2089,
+            "avail_min_mb": 1597,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.32,
+            "rep": 2
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 5.821750611066818,
+            "files": 31,
+            "inner": {
+              "id": "Phases300",
+              "width": 540,
+              "height": 300,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2202.847255,
+              "browser_open_ms": 485.135723,
+              "select_ms": 384.387898,
+              "render_ms": 2231.089663,
+              "close_ms": 32.567221,
+              "total_ms": 5336.02776
+            },
+            "avail_before_mb": 2192,
+            "avail_min_mb": 1716,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.56,
+            "rep": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "Phases1080",
+      "width": 1080,
+      "height": 1920,
+      "measured": true,
+      "reps": 3,
+      "frames": {
+        "full": 120,
+        "subset": 31,
+        "hold_skipped": 89,
+        "frame_ratio_predicted_P": 3.87
+      },
+      "wall_s": {
+        "full": {
+          "values": [
+            27.75,
+            27.79,
+            27.49
+          ],
+          "median": 27.75,
+          "min": 27.49,
+          "max": 27.79
+        },
+        "subset": {
+          "values": [
+            12.31,
+            12.18,
+            12.88
+          ],
+          "median": 12.31,
+          "min": 12.18,
+          "max": 12.88
+        }
+      },
+      "render_phase_s_inprocess": {
+        "full": {
+          "values": [
+            24.35,
+            24.31,
+            23.97
+          ],
+          "median": 24.31,
+          "min": 23.97,
+          "max": 24.35
+        },
+        "subset": {
+          "values": [
+            8.68,
+            8.64,
+            9.16
+          ],
+          "median": 8.68,
+          "min": 8.64,
+          "max": 9.16
+        },
+        "note": "renderFrames saja, diukur timer Node; bundling/browser/select/close dikeluarkan"
+      },
+      "fixed_setup_s_inprocess": {
+        "full": {
+          "values": [
+            2.94,
+            3.03,
+            3.05
+          ],
+          "median": 3.03,
+          "min": 2.94,
+          "max": 3.05
+        },
+        "subset": {
+          "values": [
+            3.19,
+            3.05,
+            3.26
+          ],
+          "median": 3.19,
+          "min": 3.05,
+          "max": 3.26
+        },
+        "note": "bundle + buka browser + selectComposition + tutup; tidak berkurang oleh hold frame"
+      },
+      "fps": {
+        "full_wall": 4.33,
+        "subset_wall": 2.52,
+        "full_render_phase": 4.94,
+        "subset_render_phase": 3.57
+      },
+      "speedup": {
+        "render_wall_whole_process": {
+          "value": 2.25,
+          "paired_per_rep": [
+            2.25,
+            2.28,
+            2.13
+          ],
+          "basis": "median(wall penuh)/median(wall subset)"
+        },
+        "render_phase_only": {
+          "value": 2.8,
+          "paired_per_rep": [
+            2.8,
+            2.81,
+            2.62
+          ]
+        }
+      },
+      "ffmpeg_s": {
+        "reconstruct_tpad_null_sink": {
+          "values": [
+            0.385,
+            0.219,
+            0.227
+          ],
+          "median": 0.227,
+          "min": 0.219,
+          "max": 0.385,
+          "frames_out": 120,
+          "note": "decode 31 PNG + tpad + concat -> 120 frame, tanpa menulis; mirip dipakai kompositor"
+        },
+        "reconstruct_tpad_to_png": {
+          "values": [
+            4.264,
+            4.548,
+            4.468
+          ],
+          "median": 4.468,
+          "min": 4.264,
+          "max": 4.548,
+          "frames_out": 120,
+          "note": "batas atas: juga meng-encode 120 PNG ke disk"
+        },
+        "decode_full_120_null_sink": {
+          "values": [
+            0.481,
+            0.482,
+            0.487
+          ],
+          "median": 0.482,
+          "min": 0.481,
+          "max": 0.487,
+          "frames_out": 120,
+          "note": "pembanding jalur lama: ffmpeg membaca 120 PNG"
+        },
+        "hardlink_120_names": {
+          "values": [
+            0.0032,
+            0.00304,
+            0.00271
+          ],
+          "median": 0.00304,
+          "min": 0.00271,
+          "max": 0.0032,
+          "note": "alternatif tanpa ffmpeg; kompositor tetap membaca 120 PNG"
+        }
+      },
+      "net_speedup": {
+        "conservative_recon_to_png": 1.65,
+        "production_like_recon_null": 2.21,
+        "symmetric_both_pay_ffmpeg_read": 2.25,
+        "render_phase_only_plus_recon_null": 2.73,
+        "definition": "waktu_penuh / (waktu_subset + biaya_rekonstruksi); semua median dari waktu dinding"
+      },
+      "equivalence": {
+        "per_rep_byte_checks": [
+          {
+            "rep": 1,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          },
+          {
+            "rep": 2,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          },
+          {
+            "rep": 3,
+            "hold_frames_in_full_render": 90,
+            "hold_unique_sha256": 1,
+            "subset_frames_compared_to_full_by_bytes": 31,
+            "subset_frames_byte_identical_to_full": 31,
+            "hold_frame_ref": 15,
+            "hold_ref_equals_all_hold_frames_of_full": true,
+            "enter_exit_frames_distinct_from_hold": true
+          }
+        ],
+        "reconstruction": {
+          "frames_out": 120,
+          "frames_expected": 120,
+          "frame_count_ok": true,
+          "framemd5": {
+            "frames_recon": 120,
+            "frames_full": 120,
+            "frames_equal": 120,
+            "hold_equal": 90,
+            "note": "md5 byte RGBA hasil decode, filter tpad+concat langsung (tanpa menulis PNG)"
+          },
+          "pixel_png_roundtrip": {
+            "frames_compared": 120,
+            "frames_identical": 120,
+            "max_abs_channel_diff": 0,
+            "hold_frames_compared": 90,
+            "hold_frames_identical": 90,
+            "note": "PNG hasil rekonstruksi ffmpeg dibaca ulang dan dibandingkan per piksel RGBA dengan render penuh"
+          }
+        }
+      },
+      "memory": {
+        "avail_min_mb_over_runs": 1352,
+        "swapout_pages_total": 87
+      },
+      "runs": {
+        "full": [
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 27.74516198784113,
+            "files": 120,
+            "inner": {
+              "id": "Phases1080",
+              "width": 1080,
+              "height": 1920,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2130.373191,
+              "browser_open_ms": 433.415195,
+              "select_ms": 351.468669,
+              "render_ms": 24349.114466,
+              "close_ms": 23.099121,
+              "total_ms": 27287.470642
+            },
+            "avail_before_mb": 2163,
+            "avail_min_mb": 1616,
+            "swapout_pages_delta": 38,
+            "loadavg1_before": 2.32,
+            "rep": 1
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 27.789929946884513,
+            "files": 120,
+            "inner": {
+              "id": "Phases1080",
+              "width": 1080,
+              "height": 1920,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2276.902203,
+              "browser_open_ms": 406.807132,
+              "select_ms": 317.193662,
+              "render_ms": 24311.110887,
+              "close_ms": 25.093082,
+              "total_ms": 27337.106966
+            },
+            "avail_before_mb": 2171,
+            "avail_min_mb": 1356,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.67,
+            "rep": 2
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 27.493160957470536,
+            "files": 120,
+            "inner": {
+              "id": "Phases1080",
+              "width": 1080,
+              "height": 1920,
+              "duration_in_frames": 120,
+              "requested_frames": 120,
+              "rendered_files": 120,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2282.16595,
+              "browser_open_ms": 428.914912,
+              "select_ms": 313.750665,
+              "render_ms": 23972.40057,
+              "close_ms": 25.85963,
+              "total_ms": 27023.091727
+            },
+            "avail_before_mb": 2180,
+            "avail_min_mb": 1352,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 1.32,
+            "rep": 3
+          }
+        ],
+        "subset": [
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 12.311868218705058,
+            "files": 31,
+            "inner": {
+              "id": "Phases1080",
+              "width": 1080,
+              "height": 1920,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2297.90752,
+              "browser_open_ms": 462.586215,
+              "select_ms": 393.637148,
+              "render_ms": 8684.379778,
+              "close_ms": 33.463656,
+              "total_ms": 11871.974317
+            },
+            "avail_before_mb": 2014,
+            "avail_min_mb": 1397,
+            "swapout_pages_delta": 0,
+            "loadavg1_before": 2.06,
+            "rep": 1
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 12.177081568166614,
+            "files": 31,
+            "inner": {
+              "id": "Phases1080",
+              "width": 1080,
+              "height": 1920,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2248.756849,
+              "browser_open_ms": 455.556129,
+              "select_ms": 323.140692,
+              "render_ms": 8640.905405,
+              "close_ms": 24.604763,
+              "total_ms": 11692.963838
+            },
+            "avail_before_mb": 2086,
+            "avail_min_mb": 1639,
+            "swapout_pages_delta": 18,
+            "loadavg1_before": 2.06,
+            "rep": 2
+          },
+          {
+            "ok": true,
+            "aborted_by_memory_watchdog": false,
+            "error": null,
+            "wall_s": 12.87862117961049,
+            "files": 31,
+            "inner": {
+              "id": "Phases1080",
+              "width": 1080,
+              "height": 1920,
+              "duration_in_frames": 120,
+              "requested_frames": 31,
+              "rendered_files": 31,
+              "first_file": "element-000.png",
+              "last_file": "element-119.png",
+              "concurrency": 1,
+              "bundle_ms": 2459.929943,
+              "browser_open_ms": 462.109957,
+              "select_ms": 318.840252,
+              "render_ms": 9158.573648,
+              "close_ms": 19.809875,
+              "total_ms": 12419.263675
+            },
+            "avail_before_mb": 2155,
+            "avail_min_mb": 1383,
+            "swapout_pages_delta": 31,
+            "loadavg1_before": 1.29,
+            "rep": 3
+          }
+        ]
+      }
+    }
+  ],
+  "not_measured": {
+    "sizes": [],
+    "reason": null
+  },
+  "total_runtime_s": 396.8
+}

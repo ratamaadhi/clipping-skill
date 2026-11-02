@@ -14,3 +14,5 @@ venv/
 !templates/*.ass.tmpl
 .DS_Store
 models/
+node_modules/
+benchmarks/frames_tmp/
