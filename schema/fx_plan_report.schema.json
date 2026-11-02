@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FxPlanReport",
+  "description": "Laporan pengesahan rencana efek video oleh fxplan (Langkah 7b)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "edl",
+    "plan",
+    "clips",
+    "summary"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "edl": {
+      "type": "string"
+    },
+    "plan": {
+      "type": "string"
+    },
+    "clips": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ClipReport"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary"
+    }
+  },
+  "$defs": {
+    "Summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accepted",
+        "accepted_with_warnings",
+        "rejected"
+      ],
+      "properties": {
+        "accepted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accepted_with_warnings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "ClipReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clip_id",
+        "duration",
+        "items"
+      ],
+      "properties": {
+        "clip_id": {
+          "type": "string"
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ItemReport"
+          }
+        }
+      }
+    },
+    "ItemReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status",
+        "errors",
+        "warnings",
+        "overlay",
+        "reason",
+        "moment"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "accepted_with_warnings",
+            "rejected"
+          ]
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overlay": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/EdlOverlay"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "moment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "EdlOverlay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "start",
+        "end",
+        "props"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "renderer": {
+          "type": "string",
+          "enum": [
+            "ffmpeg",
+            "remotion"
+          ]
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0
+        },
+        "props": {
+          "type": "object"
+        },
+        "rect": {
+          "$ref": "#/$defs/Rect"
+        }
+      }
+    },
+    "Rect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number",
+          "minimum": 0
+        },
+        "h": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

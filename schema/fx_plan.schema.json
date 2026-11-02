@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FxPlan",
+  "description": "Rencana efek video per klip yang disusun agen dalam mode suggest (Langkah 7b)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "mode",
+    "clips"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "suggest"
+      ]
+    },
+    "clips": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ClipPlan"
+      }
+    }
+  },
+  "$defs": {
+    "ClipPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clip_id",
+        "items"
+      ],
+      "properties": {
+        "clip_id": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlanItem"
+          }
+        }
+      }
+    },
+    "PlanItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "start",
+        "end",
+        "props",
+        "reason"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0
+        },
+        "props": {
+          "type": "object"
+        },
+        "rect": {
+          "$ref": "#/$defs/Rect"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "moment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hook": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Rect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number",
+          "minimum": 0
+        },
+        "h": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

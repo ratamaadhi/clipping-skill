@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FxCandidates",
+  "description": "Kandidat momen dan efek overlay yang diekstrak dari klip EDL (Langkah 7a)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "clips"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "clips": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ClipCandidates"
+      }
+    }
+  },
+  "$defs": {
+    "ClipCandidates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clip_id",
+        "duration",
+        "fps",
+        "time_precision",
+        "hook_window",
+        "shots",
+        "moments",
+        "existing_overlays",
+        "notes"
+      ],
+      "properties": {
+        "clip_id": {
+          "type": "string"
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "fps": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "time_precision": {
+          "type": "string",
+          "enum": [
+            "word",
+            "phrase"
+          ]
+        },
+        "hook_window": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "shots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Shot"
+          }
+        },
+        "moments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Moment"
+          }
+        },
+        "existing_overlays": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Shot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "t0",
+        "t1",
+        "shot_kind"
+      ],
+      "properties": {
+        "t0": {
+          "type": "number"
+        },
+        "t1": {
+          "type": "number"
+        },
+        "shot_kind": {
+          "type": "string",
+          "enum": [
+            "close_up",
+            "medium",
+            "wide",
+            "unknown"
+          ]
+        },
+        "face_height_ratio": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "face_bbox": {
+          "$ref": "#/$defs/Rect"
+        }
+      }
+    },
+    "Moment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "t0",
+        "t1",
+        "trigger_duration",
+        "trigger",
+        "text",
+        "confidence",
+        "evidence",
+        "shot_kind",
+        "in_hook_window",
+        "near_punch",
+        "available_window",
+        "fits"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "t0": {
+          "type": "number"
+        },
+        "t1": {
+          "type": "number"
+        },
+        "trigger_duration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "number",
+            "trend",
+            "list",
+            "question",
+            "product",
+            "emphasis",
+            "reveal"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence": {},
+        "shot_kind": {
+          "type": "string",
+          "enum": [
+            "close_up",
+            "medium",
+            "wide",
+            "unknown"
+          ]
+        },
+        "in_hook_window": {
+          "type": "boolean"
+        },
+        "near_punch": {
+          "type": "boolean"
+        },
+        "available_window": {
+          "$ref": "#/$defs/AvailableWindow"
+        },
+        "fits": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/EffectFit"
+          }
+        }
+      }
+    },
+    "AvailableWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start",
+        "end",
+        "limited_by"
+      ],
+      "properties": {
+        "start": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0
+        },
+        "limited_by": {
+          "type": "string",
+          "enum": [
+            "clip_end",
+            "existing_overlay"
+          ]
+        }
+      }
+    },
+    "SuggestedWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "EffectFit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "reason",
+        "rect"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "rect": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Rect"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suggested_window": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SuggestedWindow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Rect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}
