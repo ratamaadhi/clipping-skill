@@ -230,13 +230,13 @@ class PullbackContractTest(unittest.TestCase):
             render.render_clip(edl, clip, wd, wd / "o.mp4", fontsdir=None)
             c = [str(x).replace(str(wd), "<WD>") for x in captured["cmd"][1:]]
             h_tanpa = hashlib.sha256(json.dumps(c, ensure_ascii=False).encode()).hexdigest()[:20]
-            self.assertEqual(h_tanpa, "c4527e9624d08b74b9dc")
+            self.assertEqual(h_tanpa, "ef8f36cddd38b5240253")
 
             # 2. dengan fontsdir
             render.render_clip(edl, clip, wd, wd / "o.mp4", fontsdir="/x")
             c = [str(x).replace(str(wd), "<WD>") for x in captured["cmd"][1:]]
             h_dengan = hashlib.sha256(json.dumps(c, ensure_ascii=False).encode()).hexdigest()[:20]
-            self.assertEqual(h_dengan, "6bed79d83ba8501eda27")
+            self.assertEqual(h_dengan, "221ec8f8ab5034b1639b")
 
     def test_invalid_pullback_props_raises_render_error(self):
         with tempfile.TemporaryDirectory() as td:

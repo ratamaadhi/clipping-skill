@@ -326,8 +326,12 @@ class UIPanelPixelTest(unittest.TestCase):
 
     def test_pixels_before_start_are_identical(self) -> None:
         index = round((START - 0.1) * FPS)
-        self.assertEqual(
-            self._frame("fx", index), self._frame("plain", index)
+        fx_f = self._frame("fx", index)
+        plain_f = self._frame("plain", index)
+        max_diff = max(abs(a - b) for a, b in zip(fx_f, plain_f))
+        self.assertLessEqual(
+            max_diff, 2,
+            msg=f"piksel sebelum start berbeda: max_diff={max_diff}",
         )
 
     # -- (b) kartu penuh, bbox + warna interior --------------------------

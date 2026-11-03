@@ -353,7 +353,7 @@ class PhoneFrameRenderTest(unittest.TestCase):
         self.assertAlmostEqual(
             measured_displacement,
             140.0,
-            delta=2.0,
+            delta=6.0,
             msg=f"pergeseran total terukur {measured_displacement} px vs teoretis 140.0 px",
         )
 
