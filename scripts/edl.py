@@ -111,6 +111,39 @@ def map_interval(
     return (round(min(o[0] for o in outs), 3), round(max(o[1] for o in outs), 3))
 
 
+def _kinetic_words(
+    segments: list[dict[str, Any]], src_words: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Waktu kata SUMBER -> timeline OUTPUT, untuk caption kinetic (tier 2).
+
+    Kata yang seluruhnya jatuh di jeda yang dibuang tidak punya padanan di
+    output, jadi ia hilang dari daftar — bukan digeser ke kata tetangga.
+    Jendela tampil kinetic (termasuk ekor `MAX_CAP_DUR`) diputuskan renderer;
+    di sini hanya waktu asli per kata.
+    """
+    out: list[dict[str, Any]] = []
+    for w in src_words:
+        start = float(w["start"])
+        end = float(w["end"])
+        mapped_start = map_time(segments, start)
+        if mapped_start is None:
+            continue
+        mapped = map_interval(segments, start, end)
+        mapped_end = mapped[1] if mapped is not None else mapped_start
+        # Kalau kata menyeberangi sambungan segmen, `map_interval` menjumlah
+        # kedua sisi dan ikut menyerap jeda yang dibuang. Jeda itu tidak ada di
+        # output, jadi durasi kata dibatasi durasi sumbernya.
+        mapped_end = min(mapped_end, mapped_start + max(0.0, end - start))
+        out.append(
+            {
+                "w": str(w["w"]),
+                "start": round(mapped_start, 3),
+                "end": round(max(mapped_end, mapped_start), 3),
+            }
+        )
+    return out
+
+
 def _smooth_captions(captions: list[dict[str, Any]], clip_dur: float) -> None:
     """Rapikan durasi caption in-place.
 
@@ -144,6 +177,8 @@ def _clip_from_item(
     item: dict[str, Any],
     atoms: list[dict[str, Any]],
     words: list[dict[str, Any]],
+    *,
+    motion_tier: int = 1,
 ) -> dict[str, Any]:
     a0 = int(item["atom_start"])
     a1 = int(item["atom_end"])
@@ -183,6 +218,8 @@ def _clip_from_item(
             from .lib.text import clean as _clean
 
             cap["emphasis"] = _clean(str(ph["words"][em_idx]["w"]))
+        if motion_tier >= 2:
+            cap["words"] = _kinetic_words(segments, ph["words"])
         captions.append(cap)
 
     _smooth_captions(captions, out_dur)
@@ -208,7 +245,7 @@ def _clip_from_item(
             }
         )
 
-    return {
+    clip: dict[str, Any] = {
         "id": f"clip_{int(item['rank']):02d}",
         "score": {
             "axes": {k: float(v) for k, v in item["axes"].items()},
@@ -226,6 +263,11 @@ def _clip_from_item(
         "progress": True,
         "overlays": overlays,
     }
+    # Tier 2 hanya MENAMBAH kunci: tidak ada field tier-1 yang diubah nilainya,
+    # dan tanpa `motion_tier=2` kunci ini tidak pernah muncul (D-010).
+    if motion_tier >= 2:
+        clip["caption_style"] = "kinetic"
+    return clip
 
 
 def pick_diverse(
@@ -256,7 +298,14 @@ def pick_diverse(
     return picked
 
 
-def build(work_dir: str | Path, top_n: int = 5) -> dict[str, Any]:
+def build(
+    work_dir: str | Path, top_n: int = 5, *, motion_tier: int = 1
+) -> dict[str, Any]:
+    # Divalidasi sebelum menyentuh berkas: argumen salah harus tetap ValueError
+    # walau work_dir tidak ada, bukan FileNotFoundError dari meta.json.
+    if motion_tier not in (1, 2):
+        raise ValueError(f"motion_tier tidak dikenal: {motion_tier!r} (pakai 1 atau 2)")
+
     wd = Path(work_dir)
     meta = jsonio.read_json(wd / "meta.json")
     transcript = jsonio.read_json(wd / "transcript.json")
@@ -268,7 +317,8 @@ def build(work_dir: str | Path, top_n: int = 5) -> dict[str, Any]:
         raise ValueError("scored.json tidak punya kandidat")
 
     clips = [
-        _clip_from_item(item, atoms, transcript["words"]) for item in ranked
+        _clip_from_item(item, atoms, transcript["words"], motion_tier=motion_tier)
+        for item in ranked
     ]
 
     edl = {

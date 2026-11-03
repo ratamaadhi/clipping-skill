@@ -48,6 +48,11 @@
       "properties": {
         "id": {"type": "string", "pattern": "^clip_[0-9]{2,}$"},
         "score": {"$ref": "#/$defs/score"},
+        "caption_style": {
+          "enum": ["phrase", "kinetic"],
+          "default": "phrase",
+          "description": "tier-2: 'kinetic' berarti captions[].words diisi. Absen = phrase (tier-1)"
+        },
         "segments": {
           "type": "array",
           "minItems": 1,
@@ -80,7 +85,21 @@
               "end": {"type": "number", "minimum": 0},
               "text": {"type": "string", "minLength": 1},
               "emphasis": {"type": "string", "description": "satu kata di dalam text yang diberi penekanan"},
-              "src_start": {"type": "number", "description": "jejak balik ke waktu sumber, untuk debugging drift"}
+              "src_start": {"type": "number", "description": "jejak balik ke waktu sumber, untuk debugging drift"},
+              "words": {
+                "type": "array",
+                "description": "tier-2: waktu per kata pada timeline OUTPUT, dipakai kinetic typography",
+                "items": {
+                  "type": "object",
+                  "required": ["w", "start", "end"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "w": {"type": "string", "minLength": 1},
+                    "start": {"type": "number", "minimum": 0},
+                    "end": {"type": "number", "minimum": 0}
+                  }
+                }
+              }
             }
           }
         },
@@ -92,6 +111,46 @@
             "mode": {"enum": ["center", "track", "pad"]},
             "bias_x": {"type": "number", "minimum": -1, "maximum": 1, "default": 0},
             "bias_y": {"type": "number", "minimum": -1, "maximum": 1, "default": 0},
+            "face_top": {
+              "type": "number",
+              "description": "diagnostik faces.py: margin atas wajah (0..1) setelah median"
+            },
+            "bias_track": {
+              "type": "array",
+              "description": "ditulis faces.py untuk mode=track; [waktu output, bias_x -1..1]",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {"type": "number"}
+              }
+            },
+            "face_track": {
+              "type": "array",
+              "description": "tier-2: kotak wajah per sampel, px 1080x1920 sebelum punch",
+              "items": {
+                "type": "object",
+                "required": ["t", "faces"],
+                "additionalProperties": false,
+                "properties": {
+                  "t": {"type": "number", "minimum": 0},
+                  "faces": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["x", "y", "w", "h"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "x": {"type": "number"},
+                        "y": {"type": "number"},
+                        "w": {"type": "number", "minimum": 0},
+                        "h": {"type": "number", "minimum": 0}
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "keyframes": {
               "type": "array",
               "description": "dipakai bila mode=track; v1",
@@ -131,9 +190,114 @@
         },
         "overlays": {
           "type": "array",
-          "description": "reserved untuk template Remotion (v1)",
-          "items": {"type": "object"}
+          "description": "overlay grafis; tier-1 memakai tipe 'vs' lewat drawbox ffmpeg",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {"type": "string", "minLength": 1},
+              "renderer": {
+                "enum": ["ffmpeg", "remotion"],
+                "default": "ffmpeg",
+                "description": "tier-2: remotion hanya untuk overlay sparse"
+              },
+              "start": {"type": "number", "minimum": 0},
+              "end": {"type": "number", "minimum": 0},
+              "left": {"type": "string", "description": "panel VS tier-1"},
+              "right": {"type": "string", "description": "panel VS tier-1"},
+              "slot": {"type": "string"},
+              "rect": {"$ref": "#/$defs/rect"},
+              "props": {"type": "object"}
+            }
+          }
+        },
+        "transitions": {
+          "type": "array",
+          "description": "tier-2: transisi di sambungan segmen; kunci = indeks segmen, bukan detik",
+          "items": {
+            "type": "object",
+            "required": ["seg", "kind"],
+            "additionalProperties": false,
+            "properties": {
+              "seg": {"type": "integer", "minimum": 1},
+              "kind": {"type": "string", "minLength": 1},
+              "dur": {"type": "number", "exclusiveMinimum": 0}
+            }
+          }
+        },
+        "layout": {
+          "type": "object",
+          "description": "tier-2: posisi elemen hasil layout.py (Python murni, deterministik)",
+          "required": ["version"],
+          "additionalProperties": false,
+          "properties": {
+            "version": {"type": "integer", "minimum": 1},
+            "caption": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["t", "an", "y"],
+                "additionalProperties": false,
+                "properties": {
+                  "t": {"type": "number", "minimum": 0},
+                  "an": {"type": "integer", "minimum": 1, "maximum": 9},
+                  "y": {"type": "number"},
+                  "x": {"type": "number"},
+                  "size": {"type": "number", "exclusiveMinimum": 0},
+                  "scale": {"type": "number", "exclusiveMinimum": 0},
+                  "reason": {"type": "string"}
+                }
+              }
+            },
+            "overlays": {
+              "type": "array",
+              "description": "tier-2: slot overlay hasil layout.place_overlay; index = posisi di daftar overlay yang dipakai layout",
+              "items": {
+                "type": "object",
+                "required": ["index", "rect", "reason"],
+                "additionalProperties": false,
+                "properties": {
+                  "index": {"type": "integer", "minimum": 0},
+                  "rect": {
+                    "description": "kotak terpasang, atau null bila tidak ada slot bebas",
+                    "anyOf": [{"$ref": "#/$defs/rect"}, {"type": "null"}]
+                  },
+                  "reason": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "punch": {
+          "type": "array",
+          "description": "jadwal punch-in tier-1 (motion.punch_schedule)",
+          "items": {
+            "type": "object",
+            "required": ["t", "scale"],
+            "additionalProperties": false,
+            "properties": {
+              "t": {"type": "number", "minimum": 0},
+              "scale": {"type": "number", "exclusiveMinimum": 0}
+            }
+          }
+        },
+        "progress": {
+          "type": "boolean",
+          "description": "bar progres di atas frame (tier-1, default true)"
         }
+      }
+    },
+    "rect": {
+      "type": "object",
+      "description": "kotak di ruang keluaran 1080x1920",
+      "required": ["x", "y", "w", "h"],
+      "additionalProperties": false,
+      "properties": {
+        "x": {"type": "number"},
+        "y": {"type": "number"},
+        "w": {"type": "number", "minimum": 0},
+        "h": {"type": "number", "minimum": 0}
       }
     },
     "score": {

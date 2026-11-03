@@ -37,6 +37,16 @@ WINDOW = 1.2          # detik, jendela penghalusan skor bicara
 SWITCH_MARGIN = 1.35  # track lain harus 35% lebih aktif untuk merebut crop
 MIN_SCORE = 0.004     # di bawah ini dianggap tidak ada gerak mulut
 
+# Ramp linier perpindahan crop. Dipakai `crop_expression` (string ffmpeg) dan
+# `crop_x_at` (evaluasi Python) supaya hanya ada SATU definisi gerakan.
+CROP_RAMP = 0.40
+
+# Pengelompokan wajah per shot: dua deteksi dianggap wajah yang sama bila
+# pusat-x-nya berjarak kurang dari fraksi ini dari lebar frame (sama dengan
+# ambang pencocokan di `sample()`).
+FACE_MATCH_X = 0.15
+MAX_TRACK_FACES = 4
+
 
 def available() -> bool:
     try:
@@ -313,12 +323,187 @@ def _compress(timeline: list[tuple[float, float]]) -> list[tuple[float, float]]:
     return out
 
 
-def analyze_edl(work_dir: str | Path) -> dict[str, Any]:
+def _segment_index(segments: list[dict[str, Any]], t: float) -> int | None:
+    """Indeks segmen EDL yang memuat waktu sumber `t` (None = jeda dibuang)."""
+    for i, seg in enumerate(segments):
+        s = float(seg["src_start"])
+        e = float(seg["src_end"])
+        if s - 1e-6 <= t <= e + 1e-6:
+            return i
+    return None
+
+
+def _sample_face_box(
+    face: dict[str, Any],
+    sample_size: tuple[float, float],
+    src_w: int,
+    src_h: int,
+    crop_x: float,
+    crop_y: float,
+    crop_w: int,
+    crop_h: float,
+    out_w: int,
+    out_h: int,
+) -> dict[str, float]:
+    """Kotak wajah sampel (ternormalisasi) -> px keluaran 1080x1920.
+
+    Rantainya: px sampel -> px sumber -> px keluaran setelah crop bergerak.
+    Semua skala diturunkan dari ukuran (bukan angka ajaib): lebar sumber /
+    lebar sampel, lalu `out_w / crop_w`; tinggi `out_h / crop_h`.
+    """
+    sw, sh = sample_size
+    cx = float(face["cx"])
+    cy = float(face["cy"])
+    fw = float(face["w"])
+    fh = float(face["h"])
+
+    x_src = (cx * sw - fw * sw / 2.0) * (src_w / sw)
+    y_src = (cy * sh - fh * sh / 2.0) * (src_h / sh)
+    w_src = fw * src_w
+    h_src = fh * src_h
+
+    sx = out_w / crop_w
+    sy = out_h / crop_h
+    return {
+        "x": (x_src - crop_x) * sx,
+        "y": (y_src - crop_y) * sy,
+        "w": w_src * sx,
+        "h": h_src * sy,
+    }
+
+
+def face_track(
+    samples: list[dict[str, Any]],
+    segments: list[dict[str, Any]],
+    src_w: int,
+    src_h: int,
+    crop_w: int,
+    free_x: int,
+    timeline: list[tuple[float, float]],
+    *,
+    sample_size: tuple[int, int],
+) -> list[dict[str, Any]]:
+    """Kotak wajah per shot untuk `reframe.face_track` (px 1080x1920, pra-punch).
+
+    Kontrak (Langkah 4b-1):
+
+    * **Waktu = OUTPUT**, bukan waktu sumber. Tiap sampel dipetakan lewat
+      `edl.map_time`; sampel yang jatuh di jeda yang dibuang dilewati.
+    * **Shot** dimulai pada sampel `cut=True` dan pada sambungan segmen EDL
+      (indeks segmen berubah). Satu entri per shot, `t` = waktu output sampel
+      pertama shot itu.
+    * **Satu wajah = satu amplop** (min/max gabungan) atas semua sampel shot.
+      Deteksi dikelompokkan per `cx` terdekat dengan ambang `FACE_MATCH_X`
+      (0,15 lebar frame, sama seperti `sample()`); maksimum
+      `MAX_TRACK_FACES` wajah per shot (yang luas amplopnya terbesar),
+      diurutkan `x` menaik.
+    * Shot tanpa wajah tetap punya entri `faces: []`.
+    * `crop_x` dievaluasi dengan `crop_x_at` pada waktu output tiap sampel;
+      `crop_h`/`crop_y` diturunkan dari `render.crop_params` supaya sama
+      dengan crop yang benar-benar dipakai renderer (bias_y = 0).
+
+    Fungsi ini murni (tanpa OpenCV). Pemanggil yang memutuskan apakah data
+    detektor tersedia; lihat `analyze_edl(face_track=True)`.
+    """
+    from .edl import map_time
+    from .render import TARGET_H, TARGET_W, crop_params
+
+    if not samples:
+        return []
+
+    src_w = int(src_w)
+    src_h = int(src_h)
+    crop_w = int(crop_w)
+    free_x = int(free_x)
+    sw, sh = float(sample_size[0]), float(sample_size[1])
+    if min(src_w, src_h, crop_w, sw, sh) <= 0:
+        raise ValueError("dimensi sumber/sampel/crop harus > 0")
+
+    _cw, crop_h, _center_x, crop_y = crop_params(src_w, src_h)
+
+    shots: list[dict[str, Any]] = []
+    prev_seg: int | None = None
+    for s in samples:
+        t_src = float(s["t"])
+        out_t = map_time(segments, t_src)
+        if out_t is None:
+            continue
+        seg_idx = _segment_index(segments, t_src)
+        if not shots or bool(s.get("cut")) or seg_idx != prev_seg:
+            shots.append({"t": round(float(out_t), 3), "clusters": []})
+        prev_seg = seg_idx
+        clusters: list[dict[str, Any]] = shots[-1]["clusters"]
+
+        crop_x = crop_x_at(timeline, crop_w, free_x, out_t)
+        for face in s.get("faces") or []:
+            fw = float(face.get("w", 0.0))
+            fh = float(face.get("h") or 0.0)
+            if fw <= 0.0 or fh <= 0.0:
+                continue
+            cx = float(face["cx"])
+            box = _sample_face_box(
+                face, (sw, sh), src_w, src_h, crop_x, crop_y,
+                crop_w, crop_h, TARGET_W, TARGET_H,
+            )
+            best: dict[str, Any] | None = None
+            best_d = FACE_MATCH_X
+            for cluster in clusters:
+                d = abs(cx - cluster["last_cx"])
+                if d < best_d:
+                    best, best_d = cluster, d
+            if best is None:
+                best = {"last_cx": cx, "boxes": []}
+                clusters.append(best)
+            best["boxes"].append(box)
+            best["last_cx"] = cx
+
+    out: list[dict[str, Any]] = []
+    for shot in shots:
+        faces_out: list[dict[str, float]] = []
+        for cluster in shot["clusters"]:
+            boxes = cluster["boxes"]
+            x0 = min(b["x"] for b in boxes)
+            y0 = min(b["y"] for b in boxes)
+            x1 = max(b["x"] + b["w"] for b in boxes)
+            y1 = max(b["y"] + b["h"] for b in boxes)
+            faces_out.append({
+                "x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0,
+                "area": (x1 - x0) * (y1 - y0),
+            })
+        faces_out.sort(key=lambda f: (-f["area"], f["x"]))
+        faces_out = faces_out[:MAX_TRACK_FACES]
+        faces_out.sort(key=lambda f: f["x"])
+        out.append({
+            "t": shot["t"],
+            "faces": [
+                {
+                    "x": round(f["x"], 3),
+                    "y": round(f["y"], 3),
+                    "w": round(f["w"], 3),
+                    "h": round(f["h"], 3),
+                }
+                for f in faces_out
+            ],
+        })
+    return out
+
+
+# Alias supaya `analyze_edl(..., face_track=...)` (parameter bernama sama)
+# masih bisa memanggil fungsi modul ini.
+_FACE_TRACK = face_track
+
+
+def analyze_edl(work_dir: str | Path, *, face_track: bool = False) -> dict[str, Any]:
     """Hitung jalur crop per klip dan tulis ke edl.json.
 
     Dipisah dari build-edl karena butuh OpenCV: pipeline inti tetap tanpa
     dependency, dan langkah ini opsional. Kalau cv2 tidak ada, edl.json
     dibiarkan apa adanya (reframe tengah).
+
+    `face_track=True` (keyword-only) menambah `reframe.face_track`: kotak
+    wajah per shot dalam px keluaran 1080x1920 SEBELUM punch, waktu OUTPUT.
+    Nilai bawaan `False` tidak menulis apa pun yang baru dan menghasilkan
+    EDL yang byte-identik dengan versi sebelumnya — ini jalur tier-1.
     """
     from .lib import jsonio
     from .edl import map_time
@@ -368,8 +553,6 @@ def analyze_edl(work_dir: str | Path) -> dict[str, Any]:
             )
 
         timeline = bias_timeline(samples, src_w, crop_w, first)
-        if not timeline:
-            continue
         # bias_timeline memakai waktu relatif terhadap awal klip; dengan
         # multi-segment waktu itu harus dipetakan ke timeline output.
         mapped: list[list[float]] = []
@@ -377,6 +560,23 @@ def analyze_edl(work_dir: str | Path) -> dict[str, Any]:
             out_t = map_time(segs, first + t_rel)
             if out_t is not None:
                 mapped.append([out_t, b])
+
+        if face_track and samples:
+            reframe = clip.setdefault("reframe", {})
+            reframe.setdefault("mode", "center")
+            reframe["face_track"] = _FACE_TRACK(
+                samples,
+                segs,
+                src_w,
+                src_h,
+                crop_w,
+                src_w - crop_w,
+                [(float(t), float(b)) for t, b in mapped],
+                sample_size=(SAMPLE_W, SAMPLE_H),
+            )
+
+        if not timeline:
+            continue
         if mapped:
             reframe = clip.setdefault("reframe", {})
             reframe["mode"] = "track"
@@ -385,6 +585,49 @@ def analyze_edl(work_dir: str | Path) -> dict[str, Any]:
 
     jsonio.write_json(wd / "edl.json", edl)
     return {"clips": done, "total": len(edl.get("clips", []))}
+
+
+def crop_x_at(
+    timeline: list[tuple[float, float]],
+    crop_w: int,
+    free_x: int,
+    t: float,
+) -> float:
+    """Nilai `x` crop pada waktu keluaran `t` (piksel sumber).
+
+    Ini adalah evaluasi Python dari ekspresi yang dibangun
+    `crop_expression`, bukan rumus kedua: keduanya memakai `_crop_points` dan
+    `CROP_RAMP` yang sama. Perpindahan antar titik linear selama
+    `CROP_RAMP` detik dan datar di luar ramp.
+
+    `crop_w` diterima demi keseragaman tanda tangan dengan `crop_expression`
+    (di sana pun hanya `free_x` yang menentukan posisi); nilainya tidak dipakai.
+    """
+    if not timeline:
+        return float(free_x // 2)
+
+    points = _crop_points(timeline, free_x)
+    x = float(points[0][1])
+    for i in range(1, len(points)):
+        t_cur, x_cur = points[i]
+        delta = x_cur - points[i - 1][1]
+        if delta == 0:
+            continue
+        start = max(0.0, t_cur - CROP_RAMP)
+        frac = min(1.0, max(0.0, (float(t) - start) / CROP_RAMP))
+        x += delta * frac
+    return x
+
+
+def _crop_points(
+    timeline: list[tuple[float, float]], free_x: int
+) -> list[tuple[float, int]]:
+    """Titik (t, x piksel) dari timeline bias; dipakai kedua evaluator."""
+
+    def x_of(bias: float) -> int:
+        return int(round((bias + 1.0) / 2.0 * free_x))
+
+    return [(float(t), x_of(float(b))) for t, b in timeline]
 
 
 def crop_expression(timeline: list[tuple[float, float]], crop_w: int, free_x: int) -> str:
@@ -398,12 +641,7 @@ def crop_expression(timeline: list[tuple[float, float]], crop_w: int, free_x: in
     if not timeline:
         return str(free_x // 2)
 
-    TRANS = 0.40
-
-    def x_of(bias: float) -> int:
-        return int(round((bias + 1.0) / 2.0 * free_x))
-
-    points = [(t, x_of(b)) for t, b in timeline]
+    points = _crop_points(timeline, free_x)
     expr = str(points[0][1])
     for i in range(1, len(points)):
         t_cur, x_cur = points[i]
@@ -411,6 +649,6 @@ def crop_expression(timeline: list[tuple[float, float]], crop_w: int, free_x: in
         delta = x_cur - x_prev
         if delta == 0:
             continue
-        start = max(0.0, t_cur - TRANS)
-        expr += f"+({delta})*clip((t-{start:.3f})/{TRANS:g},0,1)"
+        start = max(0.0, t_cur - CROP_RAMP)
+        expr += f"+({delta})*clip((t-{start:.3f})/{CROP_RAMP:g},0,1)"
     return expr

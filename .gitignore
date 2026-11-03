@@ -16,3 +16,4 @@ venv/
 models/
 node_modules/
 benchmarks/frames_tmp/
+benchmarks/matte_preview/
